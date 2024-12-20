@@ -1,11 +1,21 @@
 import logoDark from "./logo-dark.svg";
 import logoLight from "./logo-light.svg";
+import { Chessboard } from "react-chessboard";
 
 export function Welcome() {
   return (
-    <main className="flex items-center justify-center pt-16 pb-4">
-      <div className="flex-1 flex flex-col items-center gap-16 min-h-0">
-        <header className="flex flex-col items-center gap-9">
+    <main className="flex flex-col items-center justify-center h-full w-full">
+      <div> Based Chess </div>
+      <div className="flex-1 w-full overflow-hidden" style={{containerType: "size"}}>
+      <div style={{aspectRatio: "1 / 1", width: "100cqmin", margin: "auto"}}>
+        <Chessboard/>
+      </div>
+      </div>
+
+      <div>Code at <a href="https://github.com/jgresham/based-chess">github.com/jgresham/based-chess</a></div>
+      {/* </div> */}
+      {/* <div className="flex-1 flex flex-col items-center gap-16 min-h-0"> */}
+        {/* <header className="flex flex-col items-center gap-9">
           <div className="w-[500px] max-w-[100vw] p-4">
             <img
               src={logoLight}
@@ -18,8 +28,9 @@ export function Welcome() {
               className="hidden w-full dark:block"
             />
           </div>
-        </header>
-        <div className="max-w-[300px] w-full space-y-6 px-4">
+        </header> */}
+        {/* <div className="max-w-[300px] w-full space-y-6 px-4">
+
           <nav className="rounded-3xl border border-gray-200 p-6 dark:border-gray-700 space-y-4">
             <p className="leading-6 text-gray-700 dark:text-gray-200 text-center">
               What&apos;s next?
@@ -40,8 +51,8 @@ export function Welcome() {
               ))}
             </ul>
           </nav>
-        </div>
-      </div>
+        </div> */}
+      {/* </div> */}
     </main>
   );
 }
