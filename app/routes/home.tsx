@@ -1,5 +1,10 @@
 import type { Route } from "./+types/home";
 import { Welcome } from "../welcome/welcome";
+import { WagmiProvider } from 'wagmi'
+import { config } from './wagmiconfig'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+const queryClient = new QueryClient()
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -9,5 +14,11 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  return <Welcome />;
+  return <>
+      <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <Welcome />
+        </QueryClientProvider>
+        </WagmiProvider>
+        </>
 }

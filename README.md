@@ -4,6 +4,24 @@ Chess onchain.
 
 Customizable. Composable. Forkable.
 
+## Todo
+
+Demo:
+- [ ] Get game/board state from a DB (signed messages)
+- [ ] Write state
+- [ ] UI refreshes on state change
+- [ ] Works with two hardcoded players
+
+MVP (V0):
+- [ ] On game end, write to Smart Contract all moves and signed messages
+- [ ] Game instances.
+- [ ] Invite players.
+- [ ] Integrate App Accounts
+
+V1:
+- [ ] Get/set state from a Smart Contract (signed messages)
+- [ ] Use more App Account features
+
 ## Developer details
 
 ### Welcome to React Router!

@@ -11,11 +11,14 @@
   "dependencies": {
     "@react-router/node": "^7.0.2",
     "@react-router/serve": "^7.0.2",
+    "@tanstack/react-query": "^5.62.11",
     "isbot": "^5.1.17",
     "react": "^19.0.0",
     "react-chessboard": "^4.7.2",
     "react-dom": "^19.0.0",
-    "react-router": "^7.0.2"
+    "react-router": "^7.0.2",
+    "viem": "^2.22.2",
+    "wagmi": "^2.14.6"
   },
   "devDependencies": {
     "@react-router/dev": "^7.0.2",

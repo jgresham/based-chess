@@ -1,11 +1,25 @@
 import logoDark from "./logo-dark.svg";
 import logoLight from "./logo-light.svg";
 import { Chessboard } from "react-chessboard";
+import { useAccount, useEnsName } from 'wagmi'
+import { WalletOptions } from './wallet-options'
+import { Account } from './account'
+
+
+function ConnectWallet() {
+  const { isConnected } = useAccount()
+  if (isConnected) return <Account />
+  return <WalletOptions />
+}
 
 export function Welcome() {
+  const { address } = useAccount()
+  const { data: ensName } = useEnsName({ address })
+
   return (
     <main className="flex flex-col items-center justify-center h-full w-full">
-      <div> Based Chess </div>
+      <div>Based Chess </div>
+      <div><ConnectWallet /></div>
       <div className="flex-1 w-full overflow-hidden" style={{containerType: "size"}}>
       <div style={{aspectRatio: "1 / 1", width: "100cqmin", margin: "auto"}}>
         <Chessboard/>
