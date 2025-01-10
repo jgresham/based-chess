@@ -1,11 +1,77 @@
-import logoDark from "./logo-dark.svg";
-import logoLight from "./logo-light.svg";
+import { Chess } from 'chess.js';
+import { Chessboard } from "react-chessboard";
+import { useAccount, useEnsName } from 'wagmi'
+import { WalletOptions } from './wallet-options'
+import { Account } from './account'
+import { useState } from "react";
+import { useEffect } from "react";
+import { use } from "react";
 
-export function Welcome({ message }: { message: string }) {
+
+function ConnectWallet() {
+  const { isConnected } = useAccount()
+  if (isConnected) return <Account />
+  return <WalletOptions />
+}
+
+export function Welcome() {
+  const { address } = useAccount()
+  const { data: ensName } = useEnsName({ address })
+  // const [game, setGame] = useState(new Chess("r1k4r/p2nb1p1/2b4p/1p1n1p2/2PP4/3Q1NB1/1P3PPP/R5K1 b - c3 0 19"));
+  const [game, setGame] = useState(new Chess());
+
+  useEffect(() => {
+    const fetchGame = async () => {
+      const res = await fetch(`http://localhost:8787/games/12345`);
+      console.log("res:", res);
+      const gameString = await res.json();
+      console.log("gameString:", gameString.game);
+      const newGame = new Chess();
+      newGame.load(gameString.game);
+      setGame(newGame);
+      // setGame(game.load(gameString.game));
+    }
+    console.log("calling fetchGame");
+    fetchGame();
+  }, []);
+  
+  useEffect(() => {
+    console.log("game:", game);
+  }, [game]);
+
+  const onDrop = (sourceSquare: string, targetSquare: string) => {
+    const move = game.move({
+      from: sourceSquare,
+      to: targetSquare,
+      promotion: "q", // always promote to a queen for example simplicity
+    });
+    console.log("move:", move);
+
+    // illegal move
+    if (move === null) return false;
+
+    // update the game state
+    const newGame = new Chess();
+    newGame.load(move.after);
+    setGame(newGame);
+    
+    return true;
+  }
+
   return (
-    <main className="flex items-center justify-center pt-16 pb-4">
-      <div className="flex-1 flex flex-col items-center gap-16 min-h-0">
-        <header className="flex flex-col items-center gap-9">
+    <main className="flex flex-col items-center justify-center h-full w-full">
+      <div>Based Chess </div>
+      <div><ConnectWallet /></div>
+      <div className="flex-1 w-full overflow-hidden" style={{containerType: "size"}}>
+        <div style={{aspectRatio: "1 / 1", width: "100cqmin", margin: "auto"}}>
+          <Chessboard position={game?.fen()} onPieceDrop={onDrop}/>
+        </div>
+      </div>
+
+      <div>Code at <a href="https://github.com/jgresham/based-chess">github.com/jgresham/based-chess</a></div>
+      {/* </div> */}
+      {/* <div className="flex-1 flex flex-col items-center gap-16 min-h-0"> */}
+        {/* <header className="flex flex-col items-center gap-9">
           <div className="w-[500px] max-w-[100vw] p-4">
             <img
               src={logoLight}
@@ -18,8 +84,9 @@ export function Welcome({ message }: { message: string }) {
               className="hidden w-full dark:block"
             />
           </div>
-        </header>
-        <div className="max-w-[300px] w-full space-y-6 px-4">
+        </header> */}
+        {/* <div className="max-w-[300px] w-full space-y-6 px-4">
+
           <nav className="rounded-3xl border border-gray-200 p-6 dark:border-gray-700 space-y-4">
             <p className="leading-6 text-gray-700 dark:text-gray-200 text-center">
               What&apos;s next?
@@ -38,11 +105,10 @@ export function Welcome({ message }: { message: string }) {
                   </a>
                 </li>
               ))}
-              <li className="self-stretch p-3 leading-normal">{message}</li>
             </ul>
           </nav>
-        </div>
-      </div>
+        </div> */}
+      {/* </div> */}
     </main>
   );
 }
