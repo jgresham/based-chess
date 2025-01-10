@@ -1,9 +1,13 @@
 import logoDark from "./logo-dark.svg";
 import logoLight from "./logo-light.svg";
+import { Chess } from 'chess.js';
 import { Chessboard } from "react-chessboard";
 import { useAccount, useEnsName } from 'wagmi'
 import { WalletOptions } from './wallet-options'
 import { Account } from './account'
+import { useState } from "react";
+import { useEffect } from "react";
+import { use } from "react";
 
 
 function ConnectWallet() {
@@ -15,15 +19,55 @@ function ConnectWallet() {
 export function Welcome() {
   const { address } = useAccount()
   const { data: ensName } = useEnsName({ address })
+  // const [game, setGame] = useState(new Chess("r1k4r/p2nb1p1/2b4p/1p1n1p2/2PP4/3Q1NB1/1P3PPP/R5K1 b - c3 0 19"));
+  const [game, setGame] = useState(new Chess());
+
+  useEffect(() => {
+    const fetchGame = async () => {
+      const res = await fetch(`http://localhost:8787/games/12345`);
+      console.log("res:", res);
+      const gameString = await res.json();
+      console.log("gameString:", gameString.game);
+      const newGame = new Chess();
+      newGame.load(gameString.game);
+      setGame(newGame);
+      // setGame(game.load(gameString.game));
+    }
+    console.log("calling fetchGame");
+    fetchGame();
+  }, []);
+  
+  useEffect(() => {
+    console.log("game:", game);
+  }, [game]);
+
+  const onDrop = (sourceSquare: string, targetSquare: string) => {
+    const move = game.move({
+      from: sourceSquare,
+      to: targetSquare,
+      promotion: "q", // always promote to a queen for example simplicity
+    });
+    console.log("move:", move);
+
+    // illegal move
+    if (move === null) return false;
+
+    // update the game state
+    const newGame = new Chess();
+    newGame.load(move.after);
+    setGame(newGame);
+    
+    return true;
+  }
 
   return (
     <main className="flex flex-col items-center justify-center h-full w-full">
       <div>Based Chess </div>
       <div><ConnectWallet /></div>
       <div className="flex-1 w-full overflow-hidden" style={{containerType: "size"}}>
-      <div style={{aspectRatio: "1 / 1", width: "100cqmin", margin: "auto"}}>
-        <Chessboard/>
-      </div>
+        <div style={{aspectRatio: "1 / 1", width: "100cqmin", margin: "auto"}}>
+          <Chessboard position={game?.fen()} onPieceDrop={onDrop}/>
+        </div>
       </div>
 
       <div>Code at <a href="https://github.com/jgresham/based-chess">github.com/jgresham/based-chess</a></div>
