@@ -1,11 +1,11 @@
-import { Chess } from 'chess.js';
-import { Chessboard } from "react-chessboard";
 import { useAccount, useEnsName } from 'wagmi'
 import { WalletOptions } from './wallet-options'
 import { Account } from './account'
 import { useState } from "react";
 import { useEffect } from "react";
 import { use } from "react";
+import type { Route } from '../+types/root';
+import { ChessSocket } from './chess-socket';
 
 
 function ConnectWallet() {
@@ -14,57 +14,40 @@ function ConnectWallet() {
   return <WalletOptions />
 }
 
+// export async function loader({ params, context }: Route.LoaderArgs) {
+//   console.log("context:", context);
+//   const ctxCf = context.cloudflare;
+//   const id = ctxCf.env.CURSOR_SESSIONS.idFromName("globalRoom");
+//   console.log("id:", id);
+//   const stub = ctxCf.env.CURSOR_SESSIONS.get(id);
+//   console.log("stub:", stub.sessions);
+//   // const product = await fakeDb.getProduct(params.pid);
+//   console.log("params:", params);
+//   return true;
+// }
+
 export function Welcome() {
+  // console.log("loaderData:", loaderData);
+
   const { address } = useAccount()
   const { data: ensName } = useEnsName({ address })
   // const [game, setGame] = useState(new Chess("r1k4r/p2nb1p1/2b4p/1p1n1p2/2PP4/3Q1NB1/1P3PPP/R5K1 b - c3 0 19"));
-  const [game, setGame] = useState(new Chess());
 
-  useEffect(() => {
-    const fetchGame = async () => {
-      const res = await fetch(`http://localhost:8787/games/12345`);
-      console.log("res:", res);
-      const gameString = await res.json();
-      console.log("gameString:", gameString.game);
-      const newGame = new Chess();
-      newGame.load(gameString.game);
-      setGame(newGame);
-      // setGame(game.load(gameString.game));
-    }
-    console.log("calling fetchGame");
-    fetchGame();
-  }, []);
   
-  useEffect(() => {
-    console.log("game:", game);
-  }, [game]);
+  // useEffect(() => {
+  //   console.log("game:", game);
+  // }, [game]);
 
-  const onDrop = (sourceSquare: string, targetSquare: string) => {
-    const move = game.move({
-      from: sourceSquare,
-      to: targetSquare,
-      promotion: "q", // always promote to a queen for example simplicity
-    });
-    console.log("move:", move);
 
-    // illegal move
-    if (move === null) return false;
-
-    // update the game state
-    const newGame = new Chess();
-    newGame.load(move.after);
-    setGame(newGame);
-    
-    return true;
-  }
 
   return (
     <main className="flex flex-col items-center justify-center h-full w-full">
       <div>Based Chess </div>
       <div><ConnectWallet /></div>
+      <div></div>
       <div className="flex-1 w-full overflow-hidden" style={{containerType: "size"}}>
         <div style={{aspectRatio: "1 / 1", width: "100cqmin", margin: "auto"}}>
-          <Chessboard position={game?.fen()} onPieceDrop={onDrop}/>
+        <ChessSocket id="globalRoomsss" />
         </div>
       </div>
 

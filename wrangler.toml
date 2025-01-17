@@ -3,3 +3,15 @@ name = "based-chess-worker"
 compatibility_date = "2024-11-18"
 main = "./build/server/index.js"
 assets = { directory = "./build/client/" }
+
+minify = true
+
+[[durable_objects.bindings]]
+name = "CHESS_GAME"
+class_name = "ChessGame"
+script_name = "chess-worker"
+
+[[services]]
+binding = "RPC_SERVICE"
+service = "chess-worker"
+entrypoint = "SessionsRPC"

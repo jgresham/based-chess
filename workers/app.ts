@@ -1,4 +1,6 @@
 import { createRequestHandler } from "react-router";
+// import { createRequestHandler } from "@react-router/cloudflare";
+
 
 declare global {
   interface CloudflareEnvironment {}
