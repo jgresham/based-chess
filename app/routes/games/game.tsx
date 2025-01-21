@@ -164,7 +164,7 @@ export default function Game() {
         </div>
       </div>
       <div>
-        <button onClick={() => {
+        <button type="button" onClick={() => {
           wsRef.current?.send(
             JSON.stringify({ type: "reset-game", data: {} }),
           )
