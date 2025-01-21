@@ -1,18 +1,22 @@
 "use client";
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
-import type { ChessGame } from "../../../chess-worker/src/index";
+import type { ChessGame } from "../../../../chess-worker/src/index";
 import { Chessboard } from "react-chessboard";
 import { Chess, Move } from "chess.js";
-import type { WsMessage } from "../../../chess-worker/src/index";
+import type { WsMessage } from "../../../../chess-worker/src/index";
 import { signMessage, verifyMessage } from '@wagmi/core'
 import { useAccount } from 'wagmi'
-import { config } from '../routes/wagmiconfig'
+import { config } from '../../wagmiconfig'
+import { useParams } from "react-router";
 
-export function ChessSocket() {
+
+export default function Game() {
+  console.log("Game:");
   const wsRef = useRef<WebSocket | null>(null);
   const [game, setGame] = useState<Chess | undefined>();
   const { address } = useAccount()
   const [awaitSigningMove, setAwaitSigningMove] = useState(false);
+  const params = useParams();
 
   const updateGame = (game: Chess) => {
     const newGame = new Chess();
@@ -28,7 +32,7 @@ export function ChessSocket() {
     const domain = "chess-worker.johnsgresham.workers.dev";
     // const domain = "localhost:8787";
     const ws = new WebSocket(
-      `${wsProtocol}://${domain}/ws`,
+      `${wsProtocol}://${domain}/ws?gameId=${params.gameId}`,
       //   `${wsProtocol}://localhost:8787/ws?id=${props.id}`,
       //   `${wsProtocol}://${process.env.REACT_APP_PUBLIC_WS_HOST}/ws?id=${props.id}`,
     );
@@ -74,6 +78,7 @@ export function ChessSocket() {
   }
 
   useEffect(() => {
+    console.log("params", params);
     wsRef.current = startWebSocket();
     return () => wsRef.current?.close();
     // eslint-disable-next-line react-hooks/exhaustive-deps
