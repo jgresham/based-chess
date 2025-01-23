@@ -9,6 +9,7 @@ import Game from '../routes/games/game';
 import { Outlet } from 'react-router';
 import { config } from '../wagmiconfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 // const queryClient = new QueryClient()
 
@@ -23,12 +24,16 @@ export default function WalletHeaderAndFooter() {
   const { data: ensName } = useEnsName({ address })
 
   return (
-    <main className="flex flex-col items-center justify-center h-full w-full">
-      <div>Based Chess </div>
-      <div><ConnectWallet /></div>
+    <main className="flex flex-col items-center h-full w-full">
+      <div className='flex flex-row items-center justify-between w-full p-2'>
+        <div>Based Chess</div>
+        <div><ConnectButton /></div>
+      </div>
+      {/* <div><ConnectWallet /></div> */}
       <div></div>
+      {/* <div></div> */}
       <Outlet />
-      <div>Code at <a href="https://github.com/jgresham/based-chess">github.com/jgresham/based-chess</a></div>
+      <div className='pt-16'><a href="https://github.com/jgresham/based-chess">Github</a></div>
     </main>
   );
 }

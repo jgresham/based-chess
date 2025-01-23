@@ -6,6 +6,10 @@ assets = { directory = "./build/client/" }
 
 minify = true
 
+# routes = [
+#  { pattern = "bassedchess.xyz", custom_domain = true, zone_id="174377dee3e28c69ae81eb9f0d01fa66" }
+# ]
+
 [[durable_objects.bindings]]
 name = "CHESS_GAME"
 class_name = "ChessGame"

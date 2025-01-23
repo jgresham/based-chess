@@ -1,3 +1,5 @@
+import '@rainbow-me/rainbowkit/styles.css';
+
 import {
   isRouteErrorResponse,
   Links,
@@ -12,6 +14,10 @@ import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  getDefaultConfig,
+  RainbowKitProvider,
+} from '@rainbow-me/rainbowkit';
 import { config } from "./wagmiconfig";
 
 
@@ -38,7 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="h-screen w-screen overflow-hidden" >
+      <body >
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -53,7 +59,9 @@ export default function App() {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <Outlet />
+        <RainbowKitProvider>
+          <Outlet />
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

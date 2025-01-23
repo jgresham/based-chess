@@ -4,9 +4,37 @@
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
+	/* @apply bg-white dark:bg-gray-950; */
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
+	@media (prefers-color-scheme: dark) {
+		color-scheme: dark;
+	}
+}
+
+button {
+	@apply bg-blue-500 text-white px-4 py-2 rounded-md;
+}
+
+button:hover {
+	@apply bg-blue-700;
+}
+
+a {
+	@apply text-blue-500;
+}
+
+a:hover {
+	@apply text-blue-700;
+}
+
+input {
+	@apply border border-gray-500 rounded-md p-2;
+}
+
+input:focus {
+	@apply border-blue-500;
+}
+
+* {
+	box-sizing: border-box;
 }
