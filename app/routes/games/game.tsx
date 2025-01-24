@@ -12,6 +12,7 @@ import type { BoardOrientation } from "react-chessboard/dist/chessboard/types";
 import { truncateAddress } from "../home";
 import { useInterval } from "../../useInterval";
 import useInactive from "../../useInactive";
+import DisplayAddress from "../../DisplayAddress";
 
 
 export default function Game() {
@@ -314,6 +315,7 @@ export default function Game() {
         <div className="flex flex-row items-center gap-1 ">
           {game && <span>{liveViewers}</span>}
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+            <title>Live Viewers</title>
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
           </svg>
@@ -327,6 +329,7 @@ export default function Game() {
           className="bg-transparent"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+            <title>Share URL</title>
             <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
           </svg>
         </button>
@@ -347,12 +350,9 @@ export default function Game() {
         <div className="w-full md:w-1/2 border-gray-200 flex flex-col gap-2 p-2 break-words">
           {game && <p>{game.isGameOver() === true && `Game Over! ${game.turn() === 'w' ? 'Black Wins!' : 'White Wins!'}`}</p>}
           {game && <p>{game.isGameOver() === false && (game.turn() === 'b' ? 'Black\'s Turn!' : 'White\'s Turn!')}</p>}
-          {/* {game && <div>Legal moves:{JSON.stringify(game.moves())}</div>} */}
-          {/* {game && <div>Fen: {game.fen()}</div>} */}
-          {/* {game && <div>History: {game.history()}</div>} */}
           {game && <p>Moves made: {game.history().length}</p>}
-          {player1Address && <p>Player 1 (white): {truncateAddress(player1Address as `0x${string}`)}</p>}
-          {player2Address && <p>Player 2 (black): {truncateAddress(player2Address as `0x${string}`)}</p>}
+          {player1Address && <div className='flex flex-row flex-wrap gap-2'>Player 1 (white): <DisplayAddress address={player1Address as `0x${string}`} /></div>}
+          {player2Address && <div className='flex flex-row flex-wrap gap-2'>Player 2 (black): <DisplayAddress address={player2Address as `0x${string}`} /></div>}
 
           <h3 className="pt-6 text-h3">Verifiable game state</h3>
           <div className="flex flex-row gap-2 items-center">
@@ -385,6 +385,7 @@ export default function Game() {
               className="bg-transparent"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                <title>Download</title>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
             </button></div>

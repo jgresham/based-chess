@@ -41,6 +41,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <meta property="og:title" content="Based Chess" />
+        <meta property="og:url" content="https://basedchess.xyz" />
+        <meta property="og:image" content="https://basedchess.xyz/based-chess-logo.jpg" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta property="twitter:domain" content="basedchess.xyz" />
+        <meta property="twitter:url" content="https://basedchess.xyz" />
+        <meta name="twitter:title" content="Based Chess" />
+        <meta name="twitter:description" content="Welcome to Based Chess" />
+        <meta name="twitter:image" content="https://basedchess.xyz/based-chess-logo.jpg" />
+
         <Meta />
         <Links />
       </head>
