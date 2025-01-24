@@ -16,6 +16,9 @@ export default {
           '"Noto Color Emoji"',
         ],
       },
+      animation: {
+        'spin-slow': 'spin 3s linear infinite', // Define a custom animation with 15s duration
+      },
     },
   },
   plugins: [],

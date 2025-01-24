@@ -26,14 +26,11 @@ export default function WalletHeaderAndFooter() {
   return (
     <main className="flex flex-col items-center h-full w-full">
       <div className='flex flex-row items-center justify-between w-full p-2'>
-        <div>Based Chess</div>
+        <div className='font-bold'>Based Chess</div>
         <div><ConnectButton /></div>
       </div>
-      {/* <div><ConnectWallet /></div> */}
-      <div></div>
-      {/* <div></div> */}
       <Outlet />
-      <div className='pt-16'><a href="https://github.com/jgresham/based-chess">Github</a></div>
+      <div className='pt-16 pb-8'><a href="https://github.com/jgresham/based-chess">Github</a></div>
     </main>
   );
 }

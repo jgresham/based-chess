@@ -7,10 +7,11 @@ import type { WsMessage } from "../../../../chess-worker/src/index";
 import { signMessage, verifyMessage } from '@wagmi/core'
 import { useAccount } from 'wagmi'
 import { config } from '../../wagmiconfig'
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import type { BoardOrientation } from "react-chessboard/dist/chessboard/types";
 import { truncateAddress } from "../home";
 import { useInterval } from "../../useInterval";
+import useInactive from "../../useInactive";
 
 
 export default function Game() {
@@ -23,7 +24,12 @@ export default function Game() {
   const [player1Address, setPlayer1Address] = useState("");
   const [player2Address, setPlayer2Address] = useState("");
   const [liveViewers, setLiveViewers] = useState<number>();
+  const [latestPlayer1Signature, setLatestPlayer1Signature] = useState<`0x${string}` | undefined>();
+  const [latestPlayer1Message, setLatestPlayer1Message] = useState<string | undefined>();
+  const [latestPlayer2Signature, setLatestPlayer2Signature] = useState<`0x${string}` | undefined>();
+  const [latestPlayer2Message, setLatestPlayer2Message] = useState<string | undefined>();
   const [isVisible, setIsVisible] = useState(true);
+  const isInactive = useInactive(120000); // after 2 minutes, allow websocket to close
 
   useEffect(() => {
     if (isVisible) {
@@ -71,9 +77,9 @@ export default function Game() {
   const updateGame = (game: Chess) => {
     const newGame = new Chess();
     newGame.loadPgn(game.pgn());
-    console.log("game received:", newGame.ascii());
-    console.log("game received fen:", newGame.fen());
-    console.log("game received pgn:", newGame.pgn());
+    // console.log("game received:", newGame.ascii());
+    // console.log("game received fen:", newGame.fen());
+    // console.log("game received pgn:", newGame.pgn());
     setGame(newGame);
   }
 
@@ -138,9 +144,14 @@ export default function Game() {
           if (messageData.data.liveViewers) {
             setLiveViewers(messageData.data.liveViewers);
           }
+          setLatestPlayer1Signature(messageData.data.latestPlayer1Signature);
+          setLatestPlayer1Message(messageData.data.latestPlayer1Message);
+          setLatestPlayer2Signature(messageData.data.latestPlayer2Signature);
+          setLatestPlayer2Message(messageData.data.latestPlayer2Message);
+
           break;
         case "live-viewers":
-          console.log("live-viewers:", messageData.data.liveViewers);
+          // console.log("live-viewers:", messageData.data.liveViewers);
           setLiveViewers(messageData.data.liveViewers);
           break;
         default:
@@ -160,16 +171,21 @@ export default function Game() {
   //   // biome-disable-next-line react-hooks/exhaustive-deps
   // }, []);
 
-  const signMove = async (move: { from: string, to: string, promotion: string }, moveMove: Move) => {
+  const signMove = async (
+    game: Chess,
+    move: { from: string, to: string, promotion: string },
+    moveMove: Move
+  ) => {
     if (!address) {
       console.error("no address");
       return;
     }
     // sign move
-    const message = JSON.stringify(moveMove.lan)
+    const message = game.pgn();
+    // const message = JSON.stringify(moveMove.lan)
     const signature = await signMessage(config, {
       message
-    })
+    });
     console.log("user move signature:", signature);
 
     const verified = await verifyMessage(config, {
@@ -186,6 +202,35 @@ export default function Game() {
         type: "move", data: { ...move, signature, message, address }
       }),
     );
+  }
+
+  /**
+   * Undoes the move if the user doesnt sign it
+   * or sends the move to the server if the user does sign it
+   * @param game the game state with the move already made
+   * @param move the move being made (from, to, promotion) notation
+   * @param moveMove the move being made (chess.js Move object for move metadata and alternate notations)
+   */
+  async function askUserToSignMove(game: Chess, move: { from: string, to: string, promotion: string }, moveMove: Move) {
+    setAwaitSigningMove(true);
+    try {
+      // todo: top level onDrop cant be async 
+      await signMove(game, move, moveMove);
+    } catch (error) {
+      console.error("error signing move:", error);
+      game.undo();
+      // update the game state
+      console.log("updating game state");
+      const newGame = new Chess();
+      newGame.load(game.fen());
+      newGame.loadPgn(game.pgn());
+      setGame(newGame);
+      return false;
+    } finally {
+      console.log("finally setting awaitSigningMove to false");
+      setAwaitSigningMove(false);
+    }
+    return true;
   }
 
   function onDrop(sourceSquare: string, targetSquare: string, piece: string) {
@@ -218,13 +263,15 @@ export default function Game() {
       }
 
       // update the game state
+      console.log("updating game state");
       const newGame = new Chess();
       newGame.load(move.after);
       newGame.loadPgn(game.pgn());
       setGame(newGame);
 
-      setAwaitSigningMove(true);
-      signMove({
+      // async function: undoes the move if the user doesnt sign it
+      // or sends the move to the server if the user does sign it
+      askUserToSignMove(newGame, {
         from: sourceSquare,
         to: targetSquare,
         promotion: "q", // always promote to a queen for example simplicity
@@ -238,22 +285,33 @@ export default function Game() {
     }
   }
 
-  useInterval(() => {
-    console.log("Health check websocket status");
+  useInterval(async () => {
+    // console.log("Health check websocket status");
+    if (isInactive) {
+      // console.log("user is inactive. not opening a new websocket or updating live-viewers");
+      return;
+    }
     if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED || wsRef.current.readyState === WebSocket.CLOSING) {
       console.log("websocket is closed or closing. starting websocket")
       wsRef.current = startWebSocket();
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
+    console.log("sending live-viewers message");
     wsRef.current?.send(
       JSON.stringify({ type: "live-viewers", data: {} }),
     )
   }, 30000);
 
+  useEffect(() => {
+    console.log("user changed isInactive:", isInactive);
+  }, [isInactive]);
+
   return (
     <>
       {/* icons showing the number of live views and a share url button */}
-      <div className="w-full flex flex-row justify-end items-center">
-        <div className="flex flex-row items-center gap-1">
+      <div className="w-full flex flex-row justify-end items-center pr-2">
+        <Link className="flex-1 pl-2" to={"/"}>{"< Games"}</Link>
+        <div className="flex flex-row items-center gap-1 ">
           {game && <span>{liveViewers}</span>}
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
@@ -272,6 +330,7 @@ export default function Game() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
           </svg>
         </button>
+        <span className="text-sm">{params.gameId}</span>
       </div>
       <div className="w-full flex flex-col md:flex-row">
         {/* Chessboard container */}
@@ -294,7 +353,57 @@ export default function Game() {
           {game && <p>Moves made: {game.history().length}</p>}
           {player1Address && <p>Player 1 (white): {truncateAddress(player1Address as `0x${string}`)}</p>}
           {player2Address && <p>Player 2 (black): {truncateAddress(player2Address as `0x${string}`)}</p>}
-          {game && <p>Pgn: {game.pgn()}</p>}
+
+          <h3 className="pt-6 text-h3">Verifiable game state</h3>
+          <div className="flex flex-row gap-2 items-center">
+            <span className="text-sm">Download</span>
+            <button
+              type="button"
+              onClick={() => {
+                // Convert JSON object to string
+                const jsonString = JSON.stringify({
+                  player1Address, player2Address,
+                  latestPlayer1Signature, latestPlayer1Message,
+                  latestPlayer2Signature, latestPlayer2Message,
+                  gameId: params.gameId
+                }, null, 2);
+                // Create a blob with JSON content and MIME type
+                const blob = new Blob([jsonString], { type: "application/json" });
+                // Create a link element
+                const link = document.createElement("a");
+                // Set download attribute with a filename
+                link.download = `game_data_${params.gameId}.json`;
+                // Create a URL for the blob and set it as the href attribute
+                link.href = URL.createObjectURL(blob);
+                // Append link to the body
+                document.body.appendChild(link);
+                // Programmatically click the link to trigger the download
+                link.click();
+                // Remove the link after triggering the download
+                document.body.removeChild(link);
+              }}
+              className="bg-transparent"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+            </button></div>
+          <details>
+            <summary className="text-sm">View</summary>
+            <p>
+              {game && <>Current PGN: {game.pgn()}</>}
+              {latestPlayer1Signature && <p>Latest Player 1 Signature: {latestPlayer1Signature}</p>}
+              {latestPlayer1Message && <p>Latest Player 1 PGN Message: {latestPlayer1Message}</p>}
+              {latestPlayer2Signature && <p>Latest Player 2 Signature: {latestPlayer2Signature}</p>}
+              {latestPlayer2Message && <p>Latest Player 2 PGN Message: {latestPlayer2Message}</p>}
+            </p>
+          </details>
+
+          {/* {game && <p>Pgn: {game.pgn()}</p>}
+          {latestPlayer1Signature && <p>Latest Player 1 Signature: {latestPlayer1Signature}</p>}
+          {latestPlayer1Message && <p>Latest Player 1 Message: {latestPlayer1Message}</p>}
+          {latestPlayer2Signature && <p>Latest Player 2 Signature: {latestPlayer2Signature}</p>}
+          {latestPlayer2Message && <p>Latest Player 2 Message: {latestPlayer2Message}</p>} */}
           {/* iwjoijweiofjiowejfoiwjeifjweiojfiowejiofjwef
           wejfiwjef
           wefwefwef

@@ -2,6 +2,7 @@ import { useAccount } from 'wagmi'
 import { QueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from "react";
 import { useNavigate } from 'react-router';
+import LoadingIcon from '../loadingIcon';
 
 export function meta() {
   return [
@@ -20,6 +21,7 @@ type GameData = {
 export default function Home() {
   const [player2Address, setPlayer2Address] = useState("");
   const [errorCreateGame, setErrorCreateGame] = useState("");
+  const [loadingCreateGame, setLoadingCreateGame] = useState(false);
   const [games, setGames] = useState<GameData[]>([]);
   const { address } = useAccount()
   const navigate = useNavigate();
@@ -34,6 +36,7 @@ export default function Home() {
 
   const onClickCreateGame = async () => {
     setErrorCreateGame("");
+    setLoadingCreateGame(true);
     const httpsProtocol = window.location.protocol === "https:" ? "https" : "https";
     const domain = "chess-worker.johnsgresham.workers.dev";
     const url = `${httpsProtocol}://${domain}/game`;
@@ -48,9 +51,12 @@ export default function Home() {
     if (!gameId) {
       console.error("No gameId in response");
       setErrorCreateGame("Unable to create game");
+      setLoadingCreateGame(false);
       return;
     }
+    await new Promise(resolve => setTimeout(resolve, 3000));
     navigate(`/games/${gameId}`);
+    setLoadingCreateGame(false);
   }
 
   const getUserGames = async () => {
@@ -80,6 +86,11 @@ export default function Home() {
   return (
     <>
       <div className="flex flex-col">
+        <div className="flex flex-col gap-2 items-center">
+          <p className="text-2xl font-bold">Openly Verifiable Chess</p>
+          <p>Own your wins</p>
+          <p>Build without permission</p>
+        </div>
         <div className="p-4 max-w-sm">
           <div className="border border-gray-300 rounded-lg p-4 flex flex-col gap-2">
             <p className="text-lg font-semibold">New Game</p>
@@ -87,14 +98,41 @@ export default function Home() {
             <input type="text" id="player2AddressInput" value={player2Address}
               onChange={(e) => setPlayer2Address(e.target.value)} autoComplete="off"
               data-1p-ignore data-lpignore="true" data-protonpass-ignore="true" />
-            <button type="button" onClick={() => onClickCreateGame()}>Create Game</button>
+            <button type="button" disabled={loadingCreateGame} onClick={() => onClickCreateGame()}>{loadingCreateGame ? <LoadingIcon /> : "Create Game"}</button>
           </div>
         </div>
       </div>
 
       {errorCreateGame && <p>{errorCreateGame}</p>}
-      <div className='flex flex-col items-center'>
-        {games.length > 0 && <p>Games</p>}
+      <div className='flex flex-col '>
+        {games.length > 0 && <div className="flex flex-row gap-2 items-center justify-center">
+          <span>Games</span>
+          <button
+            type="button"
+            onClick={() => {
+              // Convert JSON object to string
+              const jsonString = JSON.stringify(games, null, 2);
+              // Create a blob with JSON content and MIME type
+              const blob = new Blob([jsonString], { type: "application/json" });
+              // Create a link element
+              const link = document.createElement("a");
+              // Set download attribute with a filename
+              link.download = `games_data_${address}.json`;
+              // Create a URL for the blob and set it as the href attribute
+              link.href = URL.createObjectURL(blob);
+              // Append link to the body
+              document.body.appendChild(link);
+              // Programmatically click the link to trigger the download
+              link.click();
+              // Remove the link after triggering the download
+              document.body.removeChild(link);
+            }}
+            className="bg-transparent"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+          </button></div>}
         {games.map((game) => (
           <div key={game.gameId} className="p-4 max-w-sm">
             <div className="border border-gray-300 rounded-lg p-4 gap-2">
