@@ -1,26 +1,10 @@
 # Based Chess
 
-Chess onchain.
+Openly verifiable Chess. Onchain coming soon.
 
-Customizable. Composable. Forkable.
+Customizable. Composable. Forkable. Verifiable.
 
-## Todo
-
-Demo:
-- [ ] Get game/board state from a DB (signed messages)
-- [ ] Write state
-- [ ] UI refreshes on state change
-- [ ] Works with two hardcoded players
-
-MVP (V0):
-- [ ] On game end, write to Smart Contract all moves and signed messages
-- [ ] Game instances.
-- [ ] Invite players.
-- [ ] Integrate App Accounts
-
-V1:
-- [ ] Get/set state from a Smart Contract (signed messages)
-- [ ] Use more App Account features
+Credits to <a href="https://github.com/jhlywa/chess.js" target="_blank" rel="noopener noreferrer">chess.js</a> for the chess engine and <a href="https://github.com/Clariity/react-chessboard">react-chessboard</a> for the ui component.</p>
 
 ## Developer details
 
@@ -73,6 +57,13 @@ Deployment is done using the Wrangler CLI.
 To deploy directly to production:
 
 ```sh
+npm run deploy
+```
+
+or
+
+```sh
+npm run build
 npx wrangler deploy
 ```
 

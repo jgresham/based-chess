@@ -30,7 +30,12 @@ export default function WalletHeaderAndFooter() {
         <div><ConnectButton /></div>
       </div>
       <Outlet />
-      <div className='pt-16 pb-8'><a href="https://github.com/jgresham/based-chess">Github</a></div>
+      <div className='flex flex-col items-center justify-center pt-16 pb-8 pr-8 pl-8'>
+        <p>Credits to <a href="https://github.com/jhlywa/chess.js" target="_blank" rel="noopener noreferrer">chess.js</a>{" "}
+          for the chess engine and <a href="https://github.com/Clariity/react-chessboard">react-chessboard</a>{" "}
+          for the ui component.</p>
+        <a href="https://github.com/jgresham/based-chess">Based Chess Github</a>
+      </div>
     </main>
   );
 }
