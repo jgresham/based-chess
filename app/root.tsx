@@ -19,7 +19,22 @@ import {
   RainbowKitProvider,
 } from '@rainbow-me/rainbowkit';
 import { config } from "./wagmiconfig";
+import * as Sentry from "@sentry/react";
 
+Sentry.init({
+  dsn: "https://d659e2d42ce5d488cee90df476dea219@o1178178.ingest.us.sentry.io/4508718193049600",
+  integrations: [
+    Sentry.browserTracingIntegration(),
+    Sentry.replayIntegration(),
+  ],
+  // Tracing
+  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
+  tracePropagationTargets: ["localhost", /^https:\/\/basedchess\.xyz/],
+  // Session Replay
+  replaysSessionSampleRate: 1.0, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
+  replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
+});
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -41,6 +56,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <meta name="fc:frame" content='{"version":"next","imageUrl":"https://basedchess.xyz/based-chess-logo-3-2-2.png","button":{"title":"Play Chess","action":{"type":"launch_frame","name":"Based Chess","url":"https://basedchess.xyz/","splashImageUrl":"https://basedchess.xyz/based-chess-logo-200.jpg","splashBackgroundColor":"#435065"}}}' />
 
         <meta property="og:title" content="Based Chess" />
         <meta property="og:url" content="https://basedchess.xyz" />
