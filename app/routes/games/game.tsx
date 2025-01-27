@@ -113,7 +113,7 @@ export default function Game() {
   }
 
   const startWebSocket = () => {
-    const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const wsProtocol = window.location.protocol === "https:" ? "wss" : "wss";
     const domain = "chess-worker.johnsgresham.workers.dev";
     // const domain = "localhost:8787";
     const ws = new WebSocket(
