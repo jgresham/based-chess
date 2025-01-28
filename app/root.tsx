@@ -8,7 +8,8 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-
+// import sdk, { type Context } from "@farcaster/frame-sdk"
+import { sdk, type Context } from "@farcaster/frame-sdk"
 
 import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
@@ -20,6 +21,8 @@ import {
 } from '@rainbow-me/rainbowkit';
 import { config } from "./wagmiconfig";
 import * as Sentry from "@sentry/react";
+import { useState } from 'react';
+import { useEffect } from 'react';
 
 Sentry.init({
   dsn: "https://d659e2d42ce5d488cee90df476dea219@o1178178.ingest.us.sentry.io/4508718193049600",
@@ -85,6 +88,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
 const queryClient = new QueryClient()
 
 export default function App() {
+
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  const [context, setContext] = useState<Context.FrameContext>();
+
+  useEffect(() => {
+    const load = async () => {
+      const context = await sdk.context;
+      setContext(context);
+      sdk.actions.ready();
+    }
+    if (sdk && !isSDKLoaded) {
+      console.log("Calling load");
+      setIsSDKLoaded(true);
+      load();
+      return () => {
+        sdk.removeAllListeners();
+      };
+    }
+  }, [isSDKLoaded]);
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>

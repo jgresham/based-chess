@@ -12,7 +12,7 @@ export const config = getDefaultConfig({
     // [mainnet.id]: http(),
   },
   // chains: [base],
-  ssr: true, // If your dApp uses server side rendering (SSR)
+  ssr: false, // If your dApp uses server side rendering (SSR)
 });
 
 export const mainnetConfig = createConfig({

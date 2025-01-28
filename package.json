@@ -12,6 +12,7 @@
     "typecheck": "react-router typegen && tsc -b"
   },
   "dependencies": {
+    "@farcaster/frame-sdk": "^0.0.26",
     "@rainbow-me/rainbowkit": "^2.2.3",
     "@react-router/cloudflare": "^7.1.3",
     "@react-router/node": "^7.1.3",
