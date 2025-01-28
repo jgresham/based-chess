@@ -330,7 +330,7 @@ export default function Game() {
         </div>
         <button type="button" data-tooltip-target="screenshot-board-copy"
           onClick={() => { copyPngToClipboard(chessboardRef) }}
-          className="bg-transparent group relative px-4 py-2 text-white rounded-lg hover:bg-blue-700 focus:outline-none">
+          className="bg-transparent group relative px-4 py-2 text-black dark:text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:bg-transparent">
           {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
@@ -348,7 +348,7 @@ export default function Game() {
             navigator.clipboard.writeText(window.location.href);
             alert("Game URL copied!");
           }}
-          className="bg-transparent group relative px-4 py-2 text-white rounded-lg hover:bg-blue-700 focus:outline-none">
+          className="bg-transparent group relative px-4 py-2 text-black dark:text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:bg-transparent">
           {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
