@@ -47,7 +47,7 @@ export const downloadPng = (elementRef: React.RefObject<HTMLDivElement> | null) 
     // Create a download link
     const link = document.createElement("a");
     link.href = pngUrl;
-    link.download = "element.png";
+    link.download = "chessboard.png";
     link.click();
   });
 };
@@ -67,6 +67,8 @@ export const copyPngToClipboard = (elementRef: React.RefObject<HTMLDivElement> |
           alert("Board screenshot copied!");
         }).catch((err) => {
           console.error("Failed to copy PNG", err);
+          // try download?
+          downloadPng(elementRef);
         });
       }
     });

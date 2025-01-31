@@ -339,7 +339,7 @@ export default function Game() {
           <span
             className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 text-sm text-white bg-gray-800 rounded shadow-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           >
-            Copy Screenshot
+            Board Screenshot
           </span>
         </button>
         <button
