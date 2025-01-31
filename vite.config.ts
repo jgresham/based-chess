@@ -24,4 +24,11 @@ export default defineConfig(({ isSsrBuild }) => ({
     reactRouter(),
     tsconfigPaths(),
   ],
+  resolve: {
+    // Farcaster frame sdk doesn't have .js file extension on imports, which isn't esm compatible
+    // by default. Next.js seems to handle this correctly, but vite does not.
+    alias: {
+      '@farcaster/frame-sdk': '@farcaster/frame-sdk/dist/index.js'
+    }
+  }
 }));

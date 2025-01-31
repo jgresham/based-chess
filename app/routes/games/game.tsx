@@ -32,21 +32,24 @@ export default function Game() {
   const [latestPlayer2Signature, setLatestPlayer2Signature] = useState<`0x${string}` | undefined>();
   const [latestPlayer2Message, setLatestPlayer2Message] = useState<string | undefined>();
   const [isVisible, setIsVisible] = useState(true);
-  const isInactive = useInactive(120000); // after 2 minutes, allow websocket to close
+  const isInactive = useInactive(1800000); // after 2 minutes, allow websocket to close
+  const [logs, setLogs] = useState<string[]>(['hi']);
+  const [inCheck, setInCheck] = useState(false);
 
   useEffect(() => {
     if (isVisible) {
       console.log("page visibility changed and is visible")
       if (wsRef.current === null
         || wsRef.current.readyState === WebSocket.CLOSED
-        || wsRef.current.readyState !== WebSocket.CLOSING) {
+        || wsRef.current.readyState === WebSocket.CLOSING) {
         console.log("websocket is closed or closing. starting websocket")
+        setLogs(prevLogs => [...prevLogs, "isVisible now: websocket is closed or closing. starting websocket"]);
         wsRef.current = startWebSocket();
       }
     } else {
       console.log("page visibility changed and is not visible")
     }
-    return () => wsRef.current?.close();
+    // return () => wsRef.current?.close();
   }, [isVisible]);
 
   useEffect(() => {
@@ -66,7 +69,19 @@ export default function Game() {
     if (game?.isGameOver()) {
       console.log("game is over");
     }
-  }, [game]);
+    if (game?.isCheck()) {
+      console.log("game is in check", game);
+      // if is check and your turn, add red border or text
+      if ((game.turn() === 'w' && address === player1Address)
+        || (game.turn() === 'b' && address === player2Address)) {
+        console.log("game is in check and your turn");
+        setInCheck(true);
+      } else {
+        setInCheck(false);
+        console.log("game is in check but not your turn");
+      }
+    }
+  }, [game, address, player1Address, player2Address]);
 
   useEffect(() => {
     // Assuming player1Address and player2Address are defined elsewhere in the component
@@ -134,9 +149,17 @@ export default function Game() {
           onMoveRecieved(messageData);
           return;
         case "game":
+          // don't update the game if the current game has more moves than the received game
+          // this can happen when the user is on mobile and the websocket is closed 
+          // while the user is switched to their wallet
+
           const newGame = new Chess();
           newGame.loadPgn(messageData.data.pgn);
-          updateGame(newGame);
+          if (game && game.history().length > newGame.history().length) {
+            setLogs(prevLogs => [...prevLogs, "received game has less moves than current game. not updating game"]);
+          } else {
+            updateGame(newGame);
+          }
           // only needed first time (optimize later)
           if (messageData.data.player1Address && messageData.data.player1Address !== player1Address) {
             setPlayer1Address(messageData.data.player1Address);
@@ -168,11 +191,19 @@ export default function Game() {
     return ws;
   }
 
-  // useEffect(() => {
-  //   wsRef.current = startWebSocket();
-  //   return () => wsRef.current?.close();
-  //   // biome-disable-next-line react-hooks/exhaustive-deps
-  // }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only call on mount
+  useEffect(() => {
+    // Only close the websocket when the component unmounts
+    if (wsRef.current === null
+      || wsRef.current.readyState === WebSocket.CLOSED
+      || wsRef.current.readyState === WebSocket.CLOSING) {
+      console.log("websocket is closed or closing. starting websocket")
+      setLogs(prevLogs => [...prevLogs, "onMount: websocket is closed or closing. starting websocket"]);
+      wsRef.current = startWebSocket();
+    }
+    return () => wsRef.current?.close();
+    // biome-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const signMove = async (
     game: Chess,
@@ -200,11 +231,66 @@ export default function Game() {
 
     setAwaitSigningMove(false);
     // update server
-    wsRef.current?.send(
-      JSON.stringify({
-        type: "move", data: { ...move, signature, message, address }
-      }),
-    );
+    // on mobile, the websocket gets closed while the user is switched to their wallet
+    // so we need to wait for the websocket to open before sending the move at least 5 to 10 seconds
+    let hasSentMove = false;
+    setLogs(prevLogs => [...prevLogs, `readyState: ${wsRef.current?.readyState}`]);
+    if (wsRef.current === null
+      || wsRef.current.readyState === WebSocket.CLOSED
+      || wsRef.current.readyState === WebSocket.CLOSING) {
+      console.log("after signing move: websocket is closed or closing. starting websocket")
+      setLogs(prevLogs => [...prevLogs, "after signing move: websocket is closed or closing. starting websocket"]);
+      wsRef.current = startWebSocket();
+    }
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      try {
+        wsRef.current?.send(
+          JSON.stringify({
+            type: "move", data: { ...move, signature, message, address }
+          }),
+        );
+        hasSentMove = true;
+        setLogs(prevLogs => [...prevLogs, "move 1st try sent"]);
+      } catch (err) {
+        console.log("sending move failed:", err);
+        setLogs(prevLogs => [...prevLogs, `sending move 1st try failed. ${wsRef.current?.readyState}`]);
+      }
+    }
+    setLogs(prevLogs => [...prevLogs, `readyState: ${wsRef.current?.readyState}`]);
+    if (!hasSentMove) {
+      console.log("websocket is not open. waiting for 2 seconds before sending move");
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      try {
+        wsRef.current?.send(
+          JSON.stringify({
+            type: "move", data: { ...move, signature, message, address }
+          }),
+        );
+        hasSentMove = true;
+        setLogs(prevLogs => [...prevLogs, "move 2nd try sent"]);
+      } catch (err) {
+        console.log("sending move failed on 2nd try:", err);
+        setLogs(prevLogs => [...prevLogs, `sending move 2nd try failed. ${wsRef.current?.readyState}`]);
+      }
+    }
+    setLogs(prevLogs => [...prevLogs, `readyState: ${wsRef.current?.readyState}`]);
+    if (!hasSentMove) {
+      console.log("websocket is not open. waiting for 5 seconds before sending move");
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      try {
+        wsRef.current?.send(
+          JSON.stringify({
+            type: "move", data: { ...move, signature, message, address }
+          }),
+        );
+        hasSentMove = true;
+        setLogs(prevLogs => [...prevLogs, "move 3rd try sent"]);
+      } catch (err) {
+        console.log("sending move failed on 3rd try:", err);
+        setLogs(prevLogs => [...prevLogs, `sending move 3rd try failed. ${wsRef.current?.readyState}`]);
+      }
+    }
+    setLogs(prevLogs => [...prevLogs, `readyState: ${wsRef.current?.readyState}`]);
   }
 
   /**
@@ -221,6 +307,7 @@ export default function Game() {
       await signMove(game, move, moveMove);
     } catch (error) {
       console.error("error signing move:", error);
+      setLogs(prevLogs => [...prevLogs, `error signing move: ${error}`]);
       game.undo();
       // update the game state
       console.log("updating game state");
@@ -257,18 +344,21 @@ export default function Game() {
       if (move.color === 'w' && address !== player1Address) {
         console.error("illegal move: white piece moved by black player");
         game.undo();
+        setLogs(prevLogs => [...prevLogs, "illegal move: white piece moved by black player"]);
         return false;
       }
       if (move.color === 'b' && address !== player2Address) {
         console.error("illegal move: black piece moved by white player");
         game.undo();
+        setLogs(prevLogs => [...prevLogs, "illegal move: black piece moved by white player"]);
         return false;
       }
 
       // update the game state
       console.log("updating game state");
+      setLogs(prevLogs => [...prevLogs, "updating game state with move, still awaiting user signature"]);
       const newGame = new Chess();
-      newGame.load(move.after);
+      // newGame.load(move.after);
       newGame.loadPgn(game.pgn());
       setGame(newGame);
 
@@ -279,7 +369,7 @@ export default function Game() {
         to: targetSquare,
         promotion: "q", // always promote to a queen for example simplicity
       }, move);
-
+      setLogs(prevLogs => [...prevLogs, "askUserToSignMove"]);
       return true;
     } catch (error) {
       // illegal move
@@ -296,9 +386,11 @@ export default function Game() {
     }
     if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED || wsRef.current.readyState === WebSocket.CLOSING) {
       console.log("websocket is closed or closing. starting websocket")
+      setLogs(prevLogs => [...prevLogs, "websocket is closed or closing. starting websocket"]);
       wsRef.current = startWebSocket();
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
+    setLogs(prevLogs => [...prevLogs, `Health check: websocket is ${wsRef.current?.readyState}`]);
     console.log("sending live-viewers message");
     wsRef.current?.send(
       JSON.stringify({ type: "live-viewers", data: {} }),
@@ -323,7 +415,7 @@ export default function Game() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
           </svg>
           <span
-            className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 text-sm text-white bg-gray-800 rounded shadow-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            className="absolute z-10 top-full left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 text-sm text-white bg-gray-800 rounded shadow-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           >
             Live Viewers
           </span>
@@ -337,7 +429,7 @@ export default function Game() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
           </svg>
           <span
-            className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 text-sm text-white bg-gray-800 rounded shadow-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            className="absolute z-10 top-full left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 text-sm text-white bg-gray-800 rounded shadow-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           >
             Board Screenshot
           </span>
@@ -354,7 +446,7 @@ export default function Game() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
           </svg>
           <span
-            className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 text-sm text-white bg-gray-800 rounded shadow-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            className="absolute z-10 top-full left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 text-sm text-white bg-gray-800 rounded shadow-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           >
             Share link
           </span>
@@ -362,7 +454,7 @@ export default function Game() {
         <div className="group relative">
           <span className="text-sm">{params.gameId}</span>
           <span
-            className="select-none absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 text-sm text-white bg-gray-800 rounded shadow-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            className="select-none absolute z-10 top-full left-1/2 -translate-x-1/2 mt-2 w-max px-2 py-1 text-sm text-white bg-gray-800 rounded shadow-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           >
             Game ID
           </span>
@@ -370,19 +462,20 @@ export default function Game() {
       </div >
       <div className="w-full flex flex-col md:flex-row">
         {/* Chessboard container */}
-        <div ref={chessboardRef} className="w-full p-2 md:w-1/2 md:p-0 border-box">
+        <div ref={chessboardRef} className={`w-full p-2 md:w-1/2 md:p-0 border-box border-2 ${inCheck ? 'border-red-500' : ' border-transparent'}`}>
           {game &&
             <Chessboard position={game.fen()} onPieceDrop={onDrop}
               boardOrientation={boardOrientation}
-              arePiecesDraggable={address === player1Address || address === player2Address} />}
-          {/* Collapsible sidebar on the right of the chessboard */}
-
+              arePiecesDraggable={address === player1Address || address === player2Address} />
+          }
         </div>
 
         {/* Game info container */}
         <div className="w-full md:w-1/2 border-gray-200 flex flex-col gap-2 p-2 break-words">
           {game && <p>{game.isGameOver() === true && `Game Over! ${game.turn() === 'w' ? 'Black Wins!' : 'White Wins!'}`}</p>}
-          {game && <p>{game.isGameOver() === false && (game.turn() === 'b' ? 'Black\'s Turn!' : 'White\'s Turn!')}</p>}
+          {game &&
+            <p>{game.isGameOver() === false
+              && (game.turn() === 'b' ? 'Black\'s Turn.' : 'White\'s Turn.')} {game.isCheck() ? "Check!" : ""}</p>}
           {game && <p>Moves made: {game.history().length}</p>}
           {player1Address && <div className='flex flex-row flex-wrap gap-2'>Player 1 (white): <DisplayAddress address={player1Address as `0x${string}`} /></div>}
           {player2Address && <div className='flex flex-row flex-wrap gap-2'>Player 2 (black): <DisplayAddress address={player2Address as `0x${string}`} /></div>}
@@ -454,8 +547,15 @@ export default function Game() {
           wejfiwjef
           wefwefwef
           wefwefwe */}
+          <h3 className="pt-6 text-h3">Debug Info</h3>
+          <details>
+            <summary className="text-sm">Logs</summary>
+            <div className="flex flex-col gap-2">
+              {logs.map((log, index) => <p key={index}>{log}</p>)}
+            </div>
+          </details>
         </div>
-      </div>
+      </div >
       {
         address === "0x7D20fd2BD3D13B03571A36568cfCc2A4EB3c749e" && <div>
           <button type="button" onClick={() => {
