@@ -61,9 +61,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
         {/* prod */}
-        {/* <meta name="fc:frame" content='{"version":"next","imageUrl":"https://basedchess.xyz/based-chess-logo-3-2-2.png","button":{"title":"Play Based Chess","action":{"type":"launch_frame","name":"Based Chess","url":"https://basedchess.xyz/","splashImageUrl":"https://basedchess.xyz/based-chess-logo-200.jpg","splashBackgroundColor":"#ffffff"}}}' /> */}
+        <meta name="fc:frame" content='{"version":"next","imageUrl":"https://basedchess.xyz/based-chess-logo-3-2-2.png","button":{"title":"Play Based Chess","action":{"type":"launch_frame","name":"Based Chess","url":"https://basedchess.xyz/","splashImageUrl":"https://basedchess.xyz/based-chess-logo-200.jpg","splashBackgroundColor":"#ffffff"}}}' />
         {/* dev */}
-        <meta name="fc:frame" content='{"version":"next","imageUrl":"https://basedchess.xyz/based-chess-logo-3-2-2.png","button":{"title":"Play Based Chess","action":{"type":"launch_frame","name":"Based Chess","url":"https://3672-50-211-197-209.ngrok-free.app/","splashImageUrl":"https://basedchess.xyz/based-chess-logo-200.jpg","splashBackgroundColor":"#ffffff"}}}' />
+        {/* <meta name="fc:frame" content='{"version":"next","imageUrl":"https://basedchess.xyz/based-chess-logo-3-2-2.png","button":{"title":"Play Based Chess","action":{"type":"launch_frame","name":"Based Chess","url":"https://3672-50-211-197-209.ngrok-free.app/","splashImageUrl":"https://basedchess.xyz/based-chess-logo-200.jpg","splashBackgroundColor":"#ffffff"}}}' /> */}
 
         <meta property="og:title" content="Based Chess" />
         <meta property="og:url" content="https://basedchess.xyz" />
