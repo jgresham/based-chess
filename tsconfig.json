@@ -7,11 +7,15 @@
 		}
 	],
 	"compilerOptions": {
+		// "module": "NodeNext",
+		// "moduleResolution": "NodeNext",
 		"checkJs": true,
 		"verbatimModuleSyntax": true,
 		"skipLibCheck": true,
 		"strict": true,
 		"noEmit": true,
+		"allowImportingTsExtensions": true,
+		"resolveJsonModule": true,
 		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true
 	}

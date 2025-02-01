@@ -1,19 +1,17 @@
 "use client";
-import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
-import type { ChessGame } from "../../../../chess-worker/src/index";
+import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
-import { Chess, Move } from "chess.js";
+import { Chess, type Move } from "chess.js";
 import type { WsMessage } from "../../../../chess-worker/src/index";
 import { signMessage, verifyMessage } from '@wagmi/core'
 import { useAccount } from 'wagmi'
 import { config } from '../../wagmiconfig'
 import { Link, useParams } from "react-router";
 import type { BoardOrientation } from "react-chessboard/dist/chessboard/types";
-import { truncateAddress } from "../home";
 import { useInterval } from "../../useInterval";
 import useInactive from "../../useInactive";
 import DisplayAddress from "../../DisplayAddress";
-import { copyPngToClipboard, downloadPng } from "../../util/downloadPng";
+import { copyPngToClipboard } from "../../util/downloadPng";
 
 
 export default function Game() {

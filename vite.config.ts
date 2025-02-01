@@ -8,11 +8,12 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig(({ isSsrBuild }) => ({
   build: {
-    rollupOptions: isSsrBuild
-      ? {
-        input: "./workers/app.ts",
-      }
-      : undefined,
+    // rollupOptions: isSsrBuild
+    //   ? {
+    //     input: "./workers/app.ts",
+    //   }
+    //   : undefined,
+    rollupOptions: undefined
   },
   css: {
     postcss: {
@@ -28,7 +29,11 @@ export default defineConfig(({ isSsrBuild }) => ({
     // Farcaster frame sdk doesn't have .js file extension on imports, which isn't esm compatible
     // by default. Next.js seems to handle this correctly, but vite does not.
     alias: {
-      '@farcaster/frame-sdk': '@farcaster/frame-sdk/dist/index.js'
+      // '@farcaster/frame-sdk': '../frames/packages/frame-sdk/dist/index.js'
+      '@farcaster/frame-sdk': 'node_modules/@farcaster/frame-sdk/dist/index.js'
     }
-  }
+  },
+  // optimizeDeps: {
+  //   include: ['@farcaster/frame-sdk']
+  // }
 }));
