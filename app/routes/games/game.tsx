@@ -3,22 +3,56 @@ import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess, type Move } from "chess.js";
 import type { WsMessage } from "../../../../chess-worker/src/index";
-import { signMessage, verifyMessage } from '@wagmi/core'
-import { useAccount } from 'wagmi'
-import { config } from '../../wagmiconfig'
+import { signMessage, verifyMessage, signTypedData } from '@wagmi/core'
+import { useAccount, useConnections } from 'wagmi'
+import { frameWagmiConfig } from '../../lib/wagmiconfig'
 import { Link, useParams } from "react-router";
 import type { BoardOrientation } from "react-chessboard/dist/chessboard/types";
 import { useInterval } from "../../useInterval";
 import useInactive from "../../useInactive";
 import DisplayAddress from "../../DisplayAddress";
 import { copyPngToClipboard } from "../../util/downloadPng";
+import { sdk, type Context } from "@farcaster/frame-sdk"
 
+export function meta({ params }: { params: { gameId: string } }) {
+  return [
+    // {/* prod */}
+    // {
+    //   name: "fc:frame", content: JSON.stringify({
+    //     "version": "next",
+    //     "imageUrl": "https://basedchess.xyz/based-chess-logo-3-2-2.png",
+    //     "button": {
+    //       "title": "Play Based Chess",
+    //       "action": {
+    //         "type": "launch_frame", "name": "Based Chess", "url": "https://based-chess-frame.pages.dev/",
+    //         "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg", "splashBackgroundColor": "#ffffff"
+    //       }
+    //     }
+    //   })
+    // },
+
+    // {/* dev */}
+    // {
+    //   name: "fc:frame", content: JSON.stringify({
+    //     "version": "next",
+    //     "imageUrl": "https://basedchess.xyz/based-chess-logo-3-2-2.png",
+    //     "button": {
+    //       "title": `Chess Game ${params.gameId}`,
+    //       "action": {
+    //         "type": "launch_frame", "name": "Based Chess", "url": `https://6701-52-119-126-16.ngrok-free.app/games/${params.gameId}`,
+    //         "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg", "splashBackgroundColor": "#ffffff"
+    //       }
+    //     }
+    //   })
+    // }
+  ]
+}
 
 export default function Game() {
   const wsRef = useRef<WebSocket | null>(null);
   const chessboardRef = useRef<HTMLDivElement>(null);
   const [game, setGame] = useState<Chess | undefined>();
-  const { address } = useAccount()
+  const { address, isConnected } = useAccount()
   const [awaitSigningMove, setAwaitSigningMove] = useState(false);
   const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>("white");
   const params = useParams();
@@ -33,6 +67,31 @@ export default function Game() {
   const isInactive = useInactive(1800000); // after 2 minutes, allow websocket to close
   const [logs, setLogs] = useState<string[]>(['hi']);
   const [inCheck, setInCheck] = useState(false);
+  const [connections] = useConnections();
+
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  const [context, setContext] = useState<Context.FrameContext>();
+
+  useEffect(() => {
+    const load = async () => {
+      const context = await sdk.context;
+      setContext(context);
+      console.log("Calling sdk.actions.ready()");
+      sdk.actions.ready();
+    }
+    if (sdk && !isSDKLoaded) {
+      console.log("Calling load");
+      setIsSDKLoaded(true);
+      load();
+      return () => {
+        sdk.removeAllListeners();
+      };
+    }
+  }, [isSDKLoaded]);
+
+  useEffect(() => {
+    console.log("wagmi wallet isConnected", isConnected, connections);
+  }, [isConnected, connections]);
 
   useEffect(() => {
     if (isVisible) {
@@ -189,6 +248,10 @@ export default function Game() {
     return ws;
   }
 
+  const closeWebsocket = () => {
+    console.log("closing websocket");
+    wsRef.current?.close();
+  }
   // biome-ignore lint/correctness/useExhaustiveDependencies: only call on mount
   useEffect(() => {
     // Only close the websocket when the component unmounts
@@ -199,7 +262,12 @@ export default function Game() {
       setLogs(prevLogs => [...prevLogs, "onMount: websocket is closed or closing. starting websocket"]);
       wsRef.current = startWebSocket();
     }
-    return () => wsRef.current?.close();
+    window.addEventListener('beforeunload', closeWebsocket);
+
+    return () => {
+      wsRef.current?.close();
+      window.removeEventListener('beforeunload', closeWebsocket);
+    }
     // biome-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -215,12 +283,12 @@ export default function Game() {
     // sign move
     const message = game.pgn();
     // const message = JSON.stringify(moveMove.lan)
-    const signature = await signMessage(config, {
+    const signature = await signMessage(frameWagmiConfig, {
       message
     });
     console.log("user move signature:", signature);
 
-    const verified = await verifyMessage(config, {
+    const verified = await verifyMessage(frameWagmiConfig, {
       address,
       message,
       signature,
@@ -371,7 +439,7 @@ export default function Game() {
       return true;
     } catch (error) {
       // illegal move
-      console.error("error invalid move:", error);
+      console.log("error invalid move:", error);
       return false;
     }
   }
@@ -550,6 +618,12 @@ export default function Game() {
             <summary className="text-sm">Logs</summary>
             <div className="flex flex-col gap-2">
               {logs.map((log, index) => <p key={index}>{log}</p>)}
+            </div>
+          </details>
+          <details>
+            <summary className="text-sm">Farcaster Context</summary>
+            <div className="flex flex-col gap-2">
+              <p>{JSON.stringify(context)}</p>
             </div>
           </details>
         </div>

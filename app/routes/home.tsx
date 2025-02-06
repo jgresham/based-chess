@@ -4,11 +4,41 @@ import { useEffect, useState } from "react";
 import { useNavigate } from 'react-router';
 import LoadingIcon from '../loadingIcon';
 import DisplayAddress from '../DisplayAddress';
+import { sdk, type Context } from "@farcaster/frame-sdk"
 
 export function meta() {
   return [
     { title: "Based Chess" },
     { name: "description", content: "Welcome to Based Chess" },
+    // {/* prod */}
+    // {
+    //   name: "fc:frame", content: JSON.stringify({
+    //     "version": "next",
+    //     "imageUrl": "https://basedchess.xyz/based-chess-logo-3-2-2.png",
+    //     "button": {
+    //       "title": "Play Based Chess",
+    //       "action": {
+    //         "type": "launch_frame", "name": "Based Chess", "url": "https://based-chess-frame.pages.dev/",
+    //         "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg", "splashBackgroundColor": "#ffffff"
+    //       }
+    //     }
+    //   })
+    // },
+
+    // {/* dev */}
+    // {
+    //   name: "fc:frame", content: JSON.stringify({
+    //     "version": "next",
+    //     "imageUrl": "https://basedchess.xyz/based-chess-logo-3-2-2.png",
+    //     "button": {
+    //       "title": "Play Based Chess",
+    //       "action": {
+    //         "type": "launch_frame", "name": "Based Chess", "url": "https://6701-52-119-126-16.ngrok-free.app/",
+    //         "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg", "splashBackgroundColor": "#ffffff"
+    //       }
+    //     }
+    //   })
+    // }
   ];
 }
 
@@ -26,6 +56,27 @@ export default function Home() {
   const [games, setGames] = useState<GameData[]>([]);
   const { address } = useAccount()
   const navigate = useNavigate();
+
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  const [context, setContext] = useState<Context.FrameContext>();
+
+  useEffect(() => {
+    const load = async () => {
+      const context = await sdk.context;
+      setContext(context);
+      console.log("Calling sdk.actions.ready()");
+      sdk.actions.ready();
+    }
+    if (sdk && !isSDKLoaded) {
+      console.log("Calling load");
+      setIsSDKLoaded(true);
+      load();
+      return () => {
+        sdk.removeAllListeners();
+      };
+    }
+  }, [isSDKLoaded]);
+
 
   useEffect(() => {
     if (address) {
@@ -91,6 +142,9 @@ export default function Home() {
           <p className="text-2xl font-bold">Openly Verifiable Chess</p>
           <p>Own your wins</p>
           <p>Build without permission</p>
+          {!context?.client.added && <button type="button" onClick={async () => {
+            console.log("addFrameResults: ", await sdk.actions.addFrame());
+          }}>Add Frame</button>}
         </div>
         <div className="p-4 max-w-sm">
           <div className="border border-gray-300 rounded-lg p-4 flex flex-col gap-2">

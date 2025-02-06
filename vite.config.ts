@@ -13,7 +13,8 @@ export default defineConfig(({ isSsrBuild }) => ({
     //     input: "./workers/app.ts",
     //   }
     //   : undefined,
-    rollupOptions: undefined
+    rollupOptions: undefined,
+    sourcemap: true,
   },
   css: {
     postcss: {

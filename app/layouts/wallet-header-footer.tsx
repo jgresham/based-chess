@@ -9,7 +9,8 @@ import Game from '../routes/games/game';
 import { Outlet } from 'react-router';
 import { config } from '../wagmiconfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import DisplayAddress from '../DisplayAddress';
+// import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 // const queryClient = new QueryClient()
 
@@ -24,10 +25,12 @@ export default function WalletHeaderAndFooter() {
   const { data: ensName } = useEnsName({ address })
 
   return (
-    <main className="flex flex-col items-center h-full w-full">
+    // 98% to leave room for vertical scrollbar
+    <main className="flex flex-col items-center h-full w-[98%] justify-self-center">
       <div className='flex flex-row items-center justify-between w-full p-2'>
         <div className='font-bold'>Based Chess</div>
-        <div><ConnectButton /></div>
+        <div>{address && <DisplayAddress address={address} />}</div>
+        {/* <div><ConnectButton /></div> */}
       </div>
       <Outlet />
       <div className='flex flex-col items-center justify-center pt-16 pb-8 pr-8 pl-8 gap-2'>

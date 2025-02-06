@@ -5,12 +5,12 @@
     "signature": "MHhiN2YwNTUzODQ5ZGNiNjc3NTllOWI3MTAwOWQ1OTRmOWFhYmQyZTE1ZDBiOWQ2MmNlYjAxODQ5YTZlMDU5NTU1NjhlNWM0M2ZiYzc3ZGEyNGFiYmJiMWI2Nzg5MzRlNjdlYmNlNzU2MTczNzAxYmEwNTY4YTczZTVlNDI3MzE0MTFi"
   },
   "frame": {
-    "version": "2",
-    "name": "Based Chess",
+    "version": "next",
+    "name": "Chess",
     "iconUrl": "https://basedchess.xyz/based-chess-logo-200.jpg",
     "homeUrl": "https://based-chess-frame.pages.dev/",
     "imageUrl": "https://basedchess.xyz/based-chess-logo.jpg",
-    "buttonTitle": "Play Based Chess",
+    "buttonTitle": "Play Chess",
     "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg",
     "splashBackgroundColor": "#ffffff",
     "webhookUrl": "https://basedchess.xyz/api/webhook"
