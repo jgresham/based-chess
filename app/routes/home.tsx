@@ -1,10 +1,13 @@
-import { useAccount } from 'wagmi'
+import { useAccount, useEnsAddress, useEnsName } from 'wagmi'
 import { QueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from "react";
 import { useNavigate } from 'react-router';
 import LoadingIcon from '../loadingIcon';
 import DisplayAddress from '../DisplayAddress';
 import { sdk, type Context } from "@farcaster/frame-sdk"
+import { normalize } from 'viem/ens';
+import { isAddress } from 'viem';
+import { mainnetConfig } from '../wagmiconfig';
 
 export function meta() {
   return [
@@ -50,7 +53,7 @@ type GameData = {
 }
 
 export default function Home() {
-  const [player2Address, setPlayer2Address] = useState("");
+  const [player2AddressOrEnsInput, setPlayer2AddressOrEnsInput] = useState("");
   const [errorCreateGame, setErrorCreateGame] = useState("");
   const [loadingCreateGame, setLoadingCreateGame] = useState(false);
   const [games, setGames] = useState<GameData[]>([]);
@@ -59,6 +62,18 @@ export default function Home() {
 
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<Context.FrameContext>();
+
+  const { data: player2EnsName } = useEnsName({ config: mainnetConfig, address: player2AddressOrEnsInput as `0x${string}` });
+  const [normalizedEnsName, setNormalizedEnsName] = useState<string | undefined>(undefined);
+  const { data: player2AddressFromEns } = useEnsAddress({ config: mainnetConfig, name: normalizedEnsName || "" });
+
+  useEffect(() => {
+    try {
+      setNormalizedEnsName(normalize(player2AddressOrEnsInput));
+    } catch (error) {
+      setNormalizedEnsName(undefined);
+    }
+  }, [player2AddressOrEnsInput]);
 
   useEffect(() => {
     const load = async () => {
@@ -92,6 +107,14 @@ export default function Home() {
     const httpsProtocol = window.location.protocol === "https:" ? "https" : "https";
     const domain = "chess-worker.johnsgresham.workers.dev";
     const url = `${httpsProtocol}://${domain}/game`;
+    // player2Address is the address of the player2 or the address derived from the ens name
+    const player2Address = player2AddressFromEns || player2AddressOrEnsInput;
+    // validate that player2Address is a valid ethereum address
+    if (!isAddress(player2Address)) {
+      setErrorCreateGame("Invalid address or ens name");
+      setLoadingCreateGame(false);
+      return;
+    }
     const response = await fetch(url, {
       method: "POST",
       body: JSON.stringify({ player1Address: address, player2Address }),
@@ -135,30 +158,49 @@ export default function Home() {
     setGames(games);
   }
 
+  // if the user enters an ens name, display the address derived from the ens name
+  // if the user enters an address, display the ens name if it exists
+  let player2AddressLabel = "";
+  if (player2AddressOrEnsInput.includes("0x")) {
+    player2AddressLabel = player2EnsName ?? "";
+  } else if (player2AddressOrEnsInput.includes(".eth")) {
+    player2AddressLabel = player2AddressFromEns ?? "";
+  }
+
   return (
     <>
       <div className="flex flex-col">
         <div className="flex flex-col gap-2 items-center">
-          <p className="text-2xl font-bold">Openly Verifiable Chess</p>
-          <p>Own your wins</p>
-          <p>Build without permission</p>
-          {!context?.client.added && <button type="button" onClick={async () => {
+          {/* <p className="text-2xl font-bold">Openly Verifiable Chess</p> */}
+          <p>Own your wins. No lock-in.</p>
+          <p>Game history verified by cryptography.</p>
+          {context && !context?.client.added && <button type="button" onClick={async () => {
             console.log("addFrameResults: ", await sdk.actions.addFrame());
           }}>Add Frame</button>}
         </div>
-        <div className="p-4 max-w-sm">
+        <div className="p-4 max-w-sm w-[95vw]">
           <div className="border border-gray-300 rounded-lg p-4 flex flex-col gap-2">
-            <p className="text-lg font-semibold">New Game</p>
-            <label htmlFor="player2AddressInput">Player 2 Address:</label>
-            <input type="text" id="player2AddressInput" value={player2Address}
-              onChange={(e) => setPlayer2Address(e.target.value)} autoComplete="off"
-              data-1p-ignore data-lpignore="true" data-protonpass-ignore="true" />
-            <button type="button" disabled={loadingCreateGame} onClick={() => onClickCreateGame()}>{loadingCreateGame ? <LoadingIcon /> : "Create Game"}</button>
+            {/* <p className="text-lg font-semibold">New Game</p> */}
+            <label htmlFor="player2AddressInput" className="text-md">Player 2</label>
+            {/* show the player address if the user inputs the ens name */}
+            <input type="text" id="player2AddressInput" value={player2AddressOrEnsInput}
+              onChange={(e) => setPlayer2AddressOrEnsInput(e.target.value)} autoComplete="off"
+              data-1p-ignore data-lpignore="true" data-protonpass-ignore="true" placeholder="address or ens" />
+            {<DisplayAddress address={player2AddressFromEns as `0x${string}`} showAddress={player2AddressOrEnsInput.includes(".eth")} />}
+            <button type="button" disabled={loadingCreateGame} onClick={() => onClickCreateGame()}>{loadingCreateGame ? <LoadingIcon /> : "New Game"}</button>
           </div>
         </div>
       </div>
 
-      {errorCreateGame && <p>{errorCreateGame}</p>}
+      {errorCreateGame && (
+        <div className="flex flex-row gap-2 items-center justify-center text-red-500">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+            <title>Error</title>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+          <span className="text-red-500">{errorCreateGame}</span>
+        </div>
+      )}
       <div className='flex flex-col '>
         {games.length > 0 && <div className="flex flex-row gap-2 items-center justify-center">
           <span>Games</span>

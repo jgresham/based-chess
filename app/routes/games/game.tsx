@@ -16,6 +16,7 @@ import { sdk, type Context } from "@farcaster/frame-sdk"
 
 export function meta({ params }: { params: { gameId: string } }) {
   return [
+    { name: "description", content: `Chess Game ${params.gameId}` },
     // {/* prod */}
     // {
     //   name: "fc:frame", content: JSON.stringify({
