@@ -9,7 +9,7 @@ export function frameConnector(): ReturnType<typeof createConnector<typeof sdk.w
 
   return createConnector<typeof sdk.wallet.ethProvider>((config) => ({
     id: 'farcaster',
-    name: 'Farcaster Wallettt',
+    name: 'Farcaster Wallet',
     type: frameConnector.type,
 
 

@@ -5,6 +5,7 @@ import autoprefixer from "autoprefixer";
 import tailwindcss from "tailwindcss";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig(({ isSsrBuild }) => ({
   build: {
@@ -25,6 +26,12 @@ export default defineConfig(({ isSsrBuild }) => ({
     cloudflareDevProxy(),
     reactRouter(),
     tsconfigPaths(),
+    nodePolyfills({
+      // Whether to polyfill specific globals.
+      globals: {
+        Buffer: true,
+      },
+    }),
   ],
   resolve: {
     // Farcaster frame sdk doesn't have .js file extension on imports, which isn't esm compatible

@@ -1,3 +1,5 @@
+'use client';
+
 import { useAccount, useEnsName, WagmiProvider } from 'wagmi'
 import { WalletOptions } from '../wallet-options'
 import { Account } from '../account'
@@ -10,7 +12,8 @@ import { Outlet } from 'react-router';
 import { config } from '../wagmiconfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import DisplayAddress from '../DisplayAddress';
-// import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import 'node_modules/@rainbow-me/rainbowkit/dist/index.css';
 
 // const queryClient = new QueryClient()
 
@@ -30,7 +33,7 @@ export default function WalletHeaderAndFooter() {
       <div className='flex flex-row items-center justify-between w-full p-2'>
         <div className='font-bold'>Based Chess</div>
         <div>{address && <DisplayAddress address={address} />}</div>
-        {/* <div><ConnectButton /></div> */}
+        <div><ConnectButton /></div>
       </div>
       <Outlet />
       <div className='flex flex-col items-center justify-center pt-16 pb-8 pr-8 pl-8 gap-2'>
