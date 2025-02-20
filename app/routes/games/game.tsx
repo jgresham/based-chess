@@ -14,8 +14,10 @@ import DisplayAddress from "../../DisplayAddress";
 import { copyPngToClipboard } from "../../util/downloadPng";
 import { sdk, type Context } from "@farcaster/frame-sdk"
 import AudioPlayer, { type AudioPlayerHandle } from "../../util/AudioPlayer";
-import dropChessPiece from "../../sounds/drop_piece.wav";
-
+import dropChessPieceSound from "../../sounds/drop_piece.mp3";
+import loseGameSound from "../../sounds/lose_game.mp3";
+import winGameSound from "../../sounds/win_game.mp3";
+import drawGameSound from "../../sounds/draw_game.mp3";
 export function meta({ params }: { params: { gameId: string } }) {
   return [
     { name: "description", content: `Chess Game ${params.gameId}` },
@@ -54,7 +56,6 @@ export function meta({ params }: { params: { gameId: string } }) {
 export default function Game() {
   const wsRef = useRef<WebSocket | null>(null);
   const chessboardRef = useRef<HTMLDivElement>(null);
-  const audioPlayerRef = useRef<AudioPlayerHandle>(null);
   const [game, setGame] = useState<Chess | undefined>();
   const { address, isConnected } = useAccount()
   const [awaitSigningMove, setAwaitSigningMove] = useState(false);
@@ -72,6 +73,10 @@ export default function Game() {
   const [logs, setLogs] = useState<string[]>([navigator.userAgent]);
   const [inCheck, setInCheck] = useState(false);
   const [connections] = useConnections();
+  const [audioPlayerDropChessPiece] = useState(new Audio(dropChessPieceSound));
+  const [audioPlayerLoseGame] = useState(new Audio(loseGameSound));
+  const [audioPlayerWinGame] = useState(new Audio(winGameSound));
+  const [audioPlayerDrawGame] = useState(new Audio(drawGameSound));
 
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<Context.FrameContext>();
@@ -129,6 +134,18 @@ export default function Game() {
     console.log("useEffect game:", game);
     if (game?.isGameOver()) {
       console.log("game is over");
+      // play lose game sound if signed in player lost, otherwise play win game sound for everyone else
+      // if game is draw, play win game sound
+      if (game.isDraw()) {
+        audioPlayerDrawGame.play();
+      } else if ((address === player1Address && game.turn() === 'w')
+        || (address === player2Address && game.turn() === 'b')) {
+        // If it is my turn, I lost
+        audioPlayerLoseGame.play();
+      } else {
+        // If it is not my turn, I won. or if I am a spectator, play win game sound
+        audioPlayerWinGame.play();
+      }
     }
     if (game?.isCheck()) {
       console.log("game is in check", game);
@@ -142,7 +159,7 @@ export default function Game() {
         console.log("game is in check but not your turn");
       }
     }
-  }, [game, address, player1Address, player2Address]);
+  }, [game, address, player1Address, player2Address, audioPlayerDrawGame, audioPlayerLoseGame, audioPlayerWinGame]);
 
   useEffect(() => {
     // Assuming player1Address and player2Address are defined elsewhere in the component
@@ -163,8 +180,8 @@ export default function Game() {
     setGame(newGame);
   }
 
-  const playDropChessPieceSound = () => {
-    audioPlayerRef.current?.playSound();
+  const playDropChessPieceSound = async () => {
+    audioPlayerDropChessPiece.play();
   }
 
   const onMoveRecieved = (messageData: { data: any, type: string }) => {
@@ -401,7 +418,8 @@ export default function Game() {
 
   function onDrop(sourceSquare: string, targetSquare: string, piece: string) {
     console.log("onDrop game:", game, sourceSquare, targetSquare, piece);
-    audioPlayerRef.current?.playSound();
+    playDropChessPieceSound();
+
     if (!game) {
       console.error("game not initialized");
       return false;
@@ -438,9 +456,6 @@ export default function Game() {
       // newGame.load(move.after);
       newGame.loadPgn(game.pgn());
       setGame(newGame);
-
-      // play sounds before waiting for user to sign move
-      audioPlayerRef.current?.playSound();
 
       // async function: undoes the move if the user doesnt sign it
       // or sends the move to the server if the user does sign it
@@ -559,7 +574,6 @@ export default function Game() {
           {game && <p>Moves made: {game.history().length}</p>}
           {player1Address && <div className='flex flex-row flex-wrap gap-2'>Player 1 (white): <DisplayAddress address={player1Address as `0x${string}`} /></div>}
           {player2Address && <div className='flex flex-row flex-wrap gap-2'>Player 2 (black): <DisplayAddress address={player2Address as `0x${string}`} /></div>}
-
           <h3 className="pt-6 text-h3">Verifiable game state</h3>
           <div className="flex flex-row gap-2 items-center">
             <span className="text-sm">Download</span>
@@ -651,8 +665,6 @@ export default function Game() {
           }}>Reset Game</button>
         </div>
       }
-
-      <AudioPlayer ref={audioPlayerRef} src={dropChessPiece} />
     </>
   );
 }
