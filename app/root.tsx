@@ -1,4 +1,3 @@
-// import '@rainbow-me/rainbowkit/styles.css';
 "use client";
 
 import {
@@ -9,23 +8,14 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-// import sdk, { type Context } from "@farcaster/frame-sdk"
 import { sdk, type Context } from "@farcaster/frame-sdk"
 
 import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
-import { WagmiProvider } from "wagmi";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-// import {
-//   getDefaultConfig,
-//   RainbowKitProvider,
-// } from '@rainbow-me/rainbowkit';
-import { config } from "./wagmiconfig";
 import * as Sentry from "@sentry/react";
 import { lazy, useState } from 'react';
 import { useEffect } from 'react';
 import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
-// import FrameProvider from './lib/frameProvider';
 
 const FrameProvider = lazy(() => import('./lib/frameProvider'));
 
@@ -66,9 +56,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
         {/* prod */}
-        {/* <meta name="fc:frame" content='{"version":"next","imageUrl":"https://basedchess.xyz/based-chess-logo-3-2-2.png","button":{"title":"Play Chess","action":{"type":"launch_frame","name":"Based Chess","url":"https://based-chess-frame.pages.dev/","splashImageUrl":"https://basedchess.xyz/based-chess-logo-200.jpg","splashBackgroundColor":"#ffffff"}}}' /> */}
+        <meta name="fc:frame" content='{"version":"next","imageUrl":"https://basedchess.xyz/based-chess-logo-3-2-2.png","button":{"title":"Play Chess","action":{"type":"launch_frame","name":"Based Chess","url":"https://based-chess-frame.pages.dev/","splashImageUrl":"https://basedchess.xyz/based-chess-logo-200.jpg","splashBackgroundColor":"#ffffff"}}}' />
         {/* dev */}
-        <meta name="fc:frame" content='{"version":"next","imageUrl":"https://basedchess.xyz/based-chess-logo-3-2-2.png","button":{"title":"Play Chess","action":{"type":"launch_frame","name":"Based Chess","url":"https://6701-52-119-126-16.ngrok-free.app/","splashImageUrl":"https://basedchess.xyz/based-chess-logo-200.jpg","splashBackgroundColor":"#ffffff"}}}' />
+        {/* <meta name="fc:frame" content='{"version":"next","imageUrl":"https://basedchess.xyz/based-chess-logo-3-2-2.png","button":{"title":"Play Chess","action":{"type":"launch_frame","name":"Based Chess","url":"https://6701-52-119-126-16.ngrok-free.app/","splashImageUrl":"https://basedchess.xyz/based-chess-logo-200.jpg","splashBackgroundColor":"#ffffff"}}}' /> */}
 
         <meta property="og:title" content="Based Chess" />
         <meta property="og:url" content="https://basedchess.xyz" />
@@ -117,15 +107,6 @@ export default function App() {
     }
   }, [isSDKLoaded]);
 
-  // return (
-  //   <WagmiProvider config={config}>
-  //     <QueryClientProvider client={queryClient}>
-  //       <RainbowKitProvider>
-  //           <Outlet />
-  //       </RainbowKitProvider>
-  //     </QueryClientProvider>
-  //   </WagmiProvider>
-  // );
   return (
     <FrameProvider>
       <RainbowKitProvider theme={darkTheme()}>

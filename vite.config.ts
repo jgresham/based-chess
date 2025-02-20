@@ -1,5 +1,3 @@
-// import { vitePluginViteNodeMiniflare } from "@hiogawa/vite-node-miniflare";
-import { cloudflareDevProxy } from "@react-router/dev/vite/cloudflare";
 import { reactRouter } from "@react-router/dev/vite";
 import autoprefixer from "autoprefixer";
 import tailwindcss from "tailwindcss";
@@ -9,11 +7,6 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig(({ isSsrBuild }) => ({
   build: {
-    // rollupOptions: isSsrBuild
-    //   ? {
-    //     input: "./workers/app.ts",
-    //   }
-    //   : undefined,
     rollupOptions: undefined,
     sourcemap: true,
   },
@@ -23,11 +16,10 @@ export default defineConfig(({ isSsrBuild }) => ({
     },
   },
   plugins: [
-    cloudflareDevProxy(),
     reactRouter(),
     tsconfigPaths(),
     nodePolyfills({
-      // Whether to polyfill specific globals.
+      include: ['buffer', 'events', 'http'], // these are required by rainbowkit
       globals: {
         Buffer: true,
       },

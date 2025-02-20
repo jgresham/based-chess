@@ -1,38 +1,15 @@
 'use client';
 
-import { useAccount, useEnsName, WagmiProvider } from 'wagmi'
-import { WalletOptions } from '../wallet-options'
-import { Account } from '../account'
-import { useState } from "react";
-import { useEffect } from "react";
-import { use } from "react";
-import type { Route } from '../+types/root';
-import Game from '../routes/games/game';
 import { Outlet } from 'react-router';
-import { config } from '../wagmiconfig';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import DisplayAddress from '../DisplayAddress';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import 'node_modules/@rainbow-me/rainbowkit/dist/index.css';
 
-// const queryClient = new QueryClient()
-
-function ConnectWallet() {
-  const { isConnected } = useAccount()
-  if (isConnected) return <Account />
-  return <WalletOptions />
-}
-
 export default function WalletHeaderAndFooter() {
-  const { address } = useAccount()
-  const { data: ensName } = useEnsName({ address })
-
   return (
     // 98% to leave room for vertical scrollbar
     <main className="flex flex-col items-center h-full w-[98%] justify-self-center">
       <div className='flex flex-row items-center justify-between w-full p-2'>
         <div className='font-bold'>Based Chess</div>
-        <div>{address && <DisplayAddress address={address} />}</div>
         <div><ConnectButton /></div>
       </div>
       <Outlet />

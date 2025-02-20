@@ -5,7 +5,6 @@ import {
   route,
 } from "@react-router/dev/routes";
 import { lazy } from "react";
-// import WalletHeaderAndFooter from "./layouts/wallet-header-footer";
 
 // const Game = lazy(() => import('routes/games/game.tsx'));
 

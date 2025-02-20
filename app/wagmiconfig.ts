@@ -15,6 +15,7 @@ export const config = getDefaultConfig({
   ssr: false, // If your dApp uses server side rendering (SSR)
 });
 
+// used for ens lookups. Ex. A provider on Base doesnt work for ens lookups.
 export const mainnetConfig = createConfig({
   chains: [mainnet],
   transports: {

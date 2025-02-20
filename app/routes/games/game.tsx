@@ -66,7 +66,7 @@ export default function Game() {
   const [latestPlayer2Message, setLatestPlayer2Message] = useState<string | undefined>();
   const [isVisible, setIsVisible] = useState(true);
   const isInactive = useInactive(1800000); // after 2 minutes, allow websocket to close
-  const [logs, setLogs] = useState<string[]>(['hi']);
+  const [logs, setLogs] = useState<string[]>([navigator.userAgent]);
   const [inCheck, setInCheck] = useState(false);
   const [connections] = useConnections();
 
@@ -153,6 +153,7 @@ export default function Game() {
   const updateGame = (game: Chess) => {
     const newGame = new Chess();
     newGame.loadPgn(game.pgn());
+    console.log("game received pgn:", newGame.pgn());
     // console.log("game received:", newGame.ascii());
     // console.log("game received fen:", newGame.fen());
     // console.log("game received pgn:", newGame.pgn());
