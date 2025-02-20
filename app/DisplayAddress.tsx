@@ -3,6 +3,7 @@ import { truncateAddress } from './routes/home'
 import { mainnet } from 'wagmi/chains'
 import { mainnetConfig } from './wagmiconfig';
 import { normalize } from 'viem/ens';
+import { EmojiAvatar } from './util/EmojiAvatar';
 
 export default function DisplayAddress({ address, showAddress = false }: { address: `0x${string}` | undefined, showAddress?: boolean }) {
   const { data: ensName } = useEnsName({ config: mainnetConfig, address, chainId: mainnet.id, })
@@ -12,7 +13,8 @@ export default function DisplayAddress({ address, showAddress = false }: { addre
     chainId: mainnet.id,
   })
   return (<div className="flex flex-row items-center gap-2">
-    <img className={`w-6 h-6 rounded-full ${avatarURL ? 'visible' : 'invisible'}`} src={avatarURL} alt="avatar" />
+    <EmojiAvatar address={address || ""} ensImage={avatarURL || ""} size={24} />
+    {/* <img className={`w-6 h-6 rounded-full ${avatarURL ? 'visible' : 'invisible'}`} src={avatarURL} alt="avatar" /> */}
     {(showAddress || !ensName) ? <span>{truncateAddress(address)}</span> : <span>{ensName}</span>}
   </div>)
 }
