@@ -1,4 +1,4 @@
-import '@rainbow-me/rainbowkit/styles.css';
+"use client";
 
 import {
   isRouteErrorResponse,
@@ -8,21 +8,19 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-
+import { sdk, type Context } from "@farcaster/frame-sdk"
 
 import type { Route } from "./+types/root";
 import stylesheet from "./app.css?url";
-import { WagmiProvider } from "wagmi";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  getDefaultConfig,
-  RainbowKitProvider,
-} from '@rainbow-me/rainbowkit';
-import { config } from "./wagmiconfig";
 import * as Sentry from "@sentry/react";
+import { lazy, useState } from 'react';
+import { useEffect } from 'react';
+import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
+
+const FrameProvider = lazy(() => import('./lib/frameProvider'));
 
 Sentry.init({
-  dsn: "https://d659e2d42ce5d488cee90df476dea219@o1178178.ingest.us.sentry.io/4508718193049600",
+  dsn: "https://d3bfdc63e77374adb6a25040a7482472@o4508756937670656.ingest.us.sentry.io/4508756939767808",
   integrations: [
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration(),
@@ -57,7 +55,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-        <meta name="fc:frame" content='{"version":"next","imageUrl":"https://basedchess.xyz/based-chess-logo-3-2-2.png","button":{"title":"Play Chess","action":{"type":"launch_frame","name":"Based Chess","url":"https://basedchess.xyz/","splashImageUrl":"https://basedchess.xyz/based-chess-logo-200.jpg","splashBackgroundColor":"#435065"}}}' />
+        {/* prod */}
+        <meta name="fc:frame" content='{"version":"next","imageUrl":"https://basedchess.xyz/based-chess-logo-3-2-2.png","button":{"title":"Play Chess","action":{"type":"launch_frame","name":"Based Chess","url":"https://based-chess-frame.pages.dev/","splashImageUrl":"https://basedchess.xyz/based-chess-logo-200.jpg","splashBackgroundColor":"#ffffff"}}}' />
+        {/* dev */}
+        {/* <meta name="fc:frame" content='{"version":"next","imageUrl":"https://basedchess.xyz/based-chess-logo-3-2-2.png","button":{"title":"Play Chess","action":{"type":"launch_frame","name":"Based Chess","url":"https://6701-52-119-126-16.ngrok-free.app/","splashImageUrl":"https://basedchess.xyz/based-chess-logo-200.jpg","splashBackgroundColor":"#ffffff"}}}' /> */}
 
         <meta property="og:title" content="Based Chess" />
         <meta property="og:url" content="https://basedchess.xyz" />
@@ -82,17 +83,36 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-const queryClient = new QueryClient()
+// const queryClient = new QueryClient()
 
 export default function App() {
+
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  const [context, setContext] = useState<Context.FrameContext>();
+
+  useEffect(() => {
+    const load = async () => {
+      const context = await sdk.context;
+      setContext(context);
+      console.log("Calling sdk.actions.ready()");
+      sdk.actions.ready();
+    }
+    if (sdk && !isSDKLoaded) {
+      console.log("Calling load");
+      setIsSDKLoaded(true);
+      load();
+      return () => {
+        sdk.removeAllListeners();
+      };
+    }
+  }, [isSDKLoaded]);
+
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
-          <Outlet />
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <FrameProvider>
+      <RainbowKitProvider theme={darkTheme()}>
+        <Outlet />
+      </RainbowKitProvider>
+    </FrameProvider>
   );
 }
 
