@@ -13,7 +13,11 @@ import useInactive from "../../useInactive";
 import DisplayAddress from "../../DisplayAddress";
 import { copyPngToClipboard } from "../../util/downloadPng";
 import { sdk, type Context } from "@farcaster/frame-sdk"
-
+import AudioPlayer, { type AudioPlayerHandle } from "../../util/AudioPlayer";
+import dropChessPieceSound from "../../sounds/drop_piece.mp3";
+import loseGameSound from "../../sounds/lose_game.mp3";
+import winGameSound from "../../sounds/win_game.mp3";
+import drawGameSound from "../../sounds/draw_game.mp3";
 export function meta({ params }: { params: { gameId: string } }) {
   return [
     { name: "description", content: `Chess Game ${params.gameId}` },
@@ -69,6 +73,10 @@ export default function Game() {
   const [logs, setLogs] = useState<string[]>([navigator.userAgent]);
   const [inCheck, setInCheck] = useState(false);
   const [connections] = useConnections();
+  const [audioPlayerDropChessPiece] = useState(new Audio(dropChessPieceSound));
+  const [audioPlayerLoseGame] = useState(new Audio(loseGameSound));
+  const [audioPlayerWinGame] = useState(new Audio(winGameSound));
+  const [audioPlayerDrawGame] = useState(new Audio(drawGameSound));
 
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<Context.FrameContext>();
@@ -126,6 +134,18 @@ export default function Game() {
     console.log("useEffect game:", game);
     if (game?.isGameOver()) {
       console.log("game is over");
+      // play lose game sound if signed in player lost, otherwise play win game sound for everyone else
+      // if game is draw, play win game sound
+      if (game.isDraw()) {
+        audioPlayerDrawGame.play();
+      } else if ((address === player1Address && game.turn() === 'w')
+        || (address === player2Address && game.turn() === 'b')) {
+        // If it is my turn, I lost
+        audioPlayerLoseGame.play();
+      } else {
+        // If it is not my turn, I won. or if I am a spectator, play win game sound
+        audioPlayerWinGame.play();
+      }
     }
     if (game?.isCheck()) {
       console.log("game is in check", game);
@@ -139,7 +159,7 @@ export default function Game() {
         console.log("game is in check but not your turn");
       }
     }
-  }, [game, address, player1Address, player2Address]);
+  }, [game, address, player1Address, player2Address, audioPlayerDrawGame, audioPlayerLoseGame, audioPlayerWinGame]);
 
   useEffect(() => {
     // Assuming player1Address and player2Address are defined elsewhere in the component
@@ -160,6 +180,10 @@ export default function Game() {
     setGame(newGame);
   }
 
+  const playDropChessPieceSound = async () => {
+    audioPlayerDropChessPiece.play();
+  }
+
   const onMoveRecieved = (messageData: { data: any, type: string }) => {
     // using previous state is required because accessing game within the onMessage callback
     // results in a stale copy of game at the time the callback is registered (undefined)
@@ -173,6 +197,7 @@ export default function Game() {
       try {
         const move = prevGame.move(messageData.data);
         console.log("move received:", move);
+        playDropChessPieceSound();
       } catch (error) {
         // illegal move (this gets called multiple times in local dev. ignore)
         console.error("error invalid move:", error);
@@ -393,6 +418,8 @@ export default function Game() {
 
   function onDrop(sourceSquare: string, targetSquare: string, piece: string) {
     console.log("onDrop game:", game, sourceSquare, targetSquare, piece);
+    playDropChessPieceSound();
+
     if (!game) {
       console.error("game not initialized");
       return false;
@@ -488,11 +515,11 @@ export default function Game() {
             Live Viewers
           </span>
         </div>
-        <button type="button" data-tooltip-target="screenshot-board-copy"
+        {/* <button type="button" data-tooltip-target="screenshot-board-copy"
           onClick={() => { copyPngToClipboard(chessboardRef) }}
-          className="bg-transparent group relative px-4 py-2 text-black dark:text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:bg-transparent">
-          {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+          className="bg-transparent group relative px-4 py-2 text-black dark:text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:bg-transparent"> */}
+        {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
+        {/* <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
           </svg>
@@ -501,7 +528,7 @@ export default function Game() {
           >
             Board Screenshot
           </span>
-        </button>
+        </button> */}
         <button
           type="button"
           onClick={() => {
@@ -547,7 +574,6 @@ export default function Game() {
           {game && <p>Moves made: {game.history().length}</p>}
           {player1Address && <div className='flex flex-row flex-wrap gap-2'>Player 1 (white): <DisplayAddress address={player1Address as `0x${string}`} /></div>}
           {player2Address && <div className='flex flex-row flex-wrap gap-2'>Player 2 (black): <DisplayAddress address={player2Address as `0x${string}`} /></div>}
-
           <h3 className="pt-6 text-h3">Verifiable game state</h3>
           <div className="flex flex-row gap-2 items-center">
             <span className="text-sm">Download</span>
