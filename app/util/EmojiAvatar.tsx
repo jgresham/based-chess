@@ -14,6 +14,11 @@ export const EmojiAvatar = ({ address, ensImage, size }: { address: string, ensI
     }
   }, [ensImage]);
 
+  const { color: backgroundColor, emoji } = useMemo(
+    () => emojiAvatarForAddress(address),
+    [address],
+  );
+
   if (!address) {
     return <div style={{
       borderRadius: size,
@@ -21,17 +26,13 @@ export const EmojiAvatar = ({ address, ensImage, size }: { address: string, ensI
       width: size,
     }} />
   }
-  const { color: backgroundColor, emoji } = useMemo(
-    () => emojiAvatarForAddress(address),
-    [address],
-  );
+
   return ensImage ? (
     loaded ? (
       <div
         style={{
           backgroundSize: 'cover',
           borderRadius: size,
-          position: 'absolute',
           backgroundImage: `url(${ensImage})`,
           backgroundPosition: 'center',
           height: size,
@@ -47,7 +48,6 @@ export const EmojiAvatar = ({ address, ensImage, size }: { address: string, ensI
           color: 'modalText',
           display: 'flex',
           justifyContent: 'center',
-          position: 'absolute',
           height: size,
           width: size,
         }}

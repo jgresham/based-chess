@@ -558,11 +558,23 @@ export default function Game() {
       <div className="w-full flex flex-col md:flex-row">
         {/* Chessboard container */}
         <div ref={chessboardRef} className={`w-full p-2 md:w-1/2 md:p-0 border-box border-2 ${inCheck ? 'border-red-500' : ' border-transparent'}`}>
+          {/* If address is player1 or not player2, show player2's address on top. 
+          Board orientation is white on bottom by default. */}
+          <div className="flex flex-row pb-2">
+            {(address === player1Address || address !== player2Address) && <span><DisplayAddress address={player2Address as `0x${string}`} /></span>}
+            {address === player2Address && <span><DisplayAddress address={player1Address as `0x${string}`} /></span>}
+          </div>
           {game &&
             <Chessboard position={game.fen()} onPieceDrop={onDrop}
               boardOrientation={boardOrientation}
               arePiecesDraggable={address === player1Address || address === player2Address} />
           }
+          {/* If address is player1 or not player2, show player1's address on bottom. 
+          Board orientation is white on bottom by default. */}
+          <div className="flex flex-row pt-2">
+            {(address === player1Address || address !== player2Address) && <span><DisplayAddress address={player1Address as `0x${string}`} /></span>}
+            {address === player2Address && <span><DisplayAddress address={player2Address as `0x${string}`} /></span>}
+          </div>
         </div>
 
         {/* Game info container */}
@@ -572,8 +584,6 @@ export default function Game() {
             <p>{game.isGameOver() === false
               && (game.turn() === 'b' ? 'Black\'s Turn.' : 'White\'s Turn.')} {game.isCheck() ? "Check!" : ""}</p>}
           {game && <p>Moves made: {game.history().length}</p>}
-          {player1Address && <div className='flex flex-row flex-wrap gap-2'>Player 1 (white): <DisplayAddress address={player1Address as `0x${string}`} /></div>}
-          {player2Address && <div className='flex flex-row flex-wrap gap-2'>Player 2 (black): <DisplayAddress address={player2Address as `0x${string}`} /></div>}
           <h3 className="pt-6 text-h3">Verifiable game state</h3>
           <div className="flex flex-row gap-2 items-center">
             <span className="text-sm">Download</span>
