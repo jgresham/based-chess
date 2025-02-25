@@ -1,4 +1,3 @@
-"use client";
 import { useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess, type Move } from "chess.js";
@@ -18,6 +17,8 @@ import dropChessPieceSound from "../../sounds/drop_piece.mp3";
 import loseGameSound from "../../sounds/lose_game.mp3";
 import winGameSound from "../../sounds/win_game.mp3";
 import drawGameSound from "../../sounds/draw_game.mp3";
+import OnTheClock from "../../OnTheClock";
+import { SyncGameBtn } from "./SyncGameBtn";
 export function meta({ params }: { params: { gameId: string } }) {
   return [
     { name: "description", content: `Chess Game ${params.gameId}` },
@@ -68,6 +69,7 @@ export default function Game() {
   const [latestPlayer1Message, setLatestPlayer1Message] = useState<string | undefined>();
   const [latestPlayer2Signature, setLatestPlayer2Signature] = useState<`0x${string}` | undefined>();
   const [latestPlayer2Message, setLatestPlayer2Message] = useState<string | undefined>();
+  const [contractGameId, setContractGameId] = useState<number | undefined>();
   const [isVisible, setIsVisible] = useState(true);
   const isInactive = useInactive(1800000); // after 2 minutes, allow websocket to close
   const [logs, setLogs] = useState<string[]>([navigator.userAgent]);
@@ -213,7 +215,8 @@ export default function Game() {
 
   const startWebSocket = () => {
     const wsProtocol = window.location.protocol === "https:" ? "wss" : "wss";
-    const domain = "chess-worker.johnsgresham.workers.dev";
+    const domain = import.meta.env.VITE_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
+    // const stagingDomain = "chess-worker-staging.johnsgresham.workers.dev";
     // const domain = "localhost:8787";
     const ws = new WebSocket(
       `${wsProtocol}://${domain}/ws?gameId=${params.gameId}`,
@@ -258,6 +261,7 @@ export default function Game() {
           setLatestPlayer1Message(messageData.data.latestPlayer1Message);
           setLatestPlayer2Signature(messageData.data.latestPlayer2Signature);
           setLatestPlayer2Message(messageData.data.latestPlayer2Message);
+          setContractGameId(messageData.data.contractGameId);
 
           break;
         case "live-viewers":
@@ -294,6 +298,10 @@ export default function Game() {
     return () => {
       wsRef.current?.close();
       window.removeEventListener('beforeunload', closeWebsocket);
+      audioPlayerDrawGame.pause();
+      audioPlayerLoseGame.pause();
+      audioPlayerWinGame.pause();
+      audioPlayerDropChessPiece.pause();
     }
     // biome-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -496,6 +504,26 @@ export default function Game() {
     console.log("user changed isInactive:", isInactive);
   }, [isInactive]);
 
+  let topAddress = player2Address;
+  if (address === player2Address) {
+    topAddress = player1Address;
+  }
+  const bottomAddress = topAddress === player1Address ? player2Address : player1Address;
+  let playerOnTheClock: `0x${string}` | undefined;
+  if (game?.isGameOver() === false) {
+    playerOnTheClock = (game?.turn() === 'w' ? player1Address : player2Address) as `0x${string}`;
+  }
+
+  let latestSignedMessage = latestPlayer1Message;
+  let latestSignedPlayer = player1Address;
+  let latestSignedSignature = latestPlayer1Signature;
+  // ignore undefined case for now
+  if (latestPlayer1Message && latestPlayer2Message && latestPlayer2Message?.length > latestPlayer1Message?.length) {
+    latestSignedMessage = latestPlayer2Message;
+    latestSignedPlayer = player2Address;
+    latestSignedSignature = latestPlayer2Signature;
+  }
+
   return (
     <>
       {/* icons showing the number of live views and a share url button */}
@@ -560,9 +588,9 @@ export default function Game() {
         <div ref={chessboardRef} className={`w-full p-2 md:w-1/2 md:p-0 border-box border-2 ${inCheck ? 'border-red-500' : ' border-transparent'}`}>
           {/* If address is player1 or not player2, show player2's address on top. 
           Board orientation is white on bottom by default. */}
-          <div className="flex flex-row pb-2">
-            {(address === player1Address || address !== player2Address) && <span><DisplayAddress address={player2Address as `0x${string}`} /></span>}
-            {address === player2Address && <span><DisplayAddress address={player1Address as `0x${string}`} /></span>}
+          <div className="flex flex-row pb-2 items-center justify-between">
+            <span><DisplayAddress address={topAddress as `0x${string}`} /></span>
+            {playerOnTheClock === topAddress && <OnTheClock />}
           </div>
           {game &&
             <Chessboard position={game.fen()} onPieceDrop={onDrop}
@@ -571,9 +599,9 @@ export default function Game() {
           }
           {/* If address is player1 or not player2, show player1's address on bottom. 
           Board orientation is white on bottom by default. */}
-          <div className="flex flex-row pt-2">
-            {(address === player1Address || address !== player2Address) && <span><DisplayAddress address={player1Address as `0x${string}`} /></span>}
-            {address === player2Address && <span><DisplayAddress address={player2Address as `0x${string}`} /></span>}
+          <div className="flex flex-row pt-2 items-center justify-between">
+            <span><DisplayAddress address={bottomAddress as `0x${string}`} /></span>
+            {playerOnTheClock === bottomAddress && <OnTheClock />}
           </div>
         </div>
 
@@ -585,7 +613,8 @@ export default function Game() {
               && (game.turn() === 'b' ? 'Black\'s Turn.' : 'White\'s Turn.')} {game.isCheck() ? "Check!" : ""}</p>}
           {game && <p>Moves made: {game.history().length}</p>}
           <h3 className="pt-6 text-h3">Verifiable game state</h3>
-          <div className="flex flex-row gap-2 items-center">
+          <SyncGameBtn game={game} message={latestSignedMessage} signer={latestSignedPlayer} signature={latestSignedSignature} />
+          < div className="flex flex-row gap-2 items-center">
             <span className="text-sm">Download</span>
             <button
               type="button"
@@ -666,15 +695,6 @@ export default function Game() {
           </details>
         </div>
       </div >
-      {
-        address === "0x7D20fd2BD3D13B03571A36568cfCc2A4EB3c749e" && <div>
-          <button type="button" onClick={() => {
-            wsRef.current?.send(
-              JSON.stringify({ type: "reset-game", data: {} }),
-            )
-          }}>Reset Game</button>
-        </div>
-      }
     </>
   );
 }
