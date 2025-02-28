@@ -32,6 +32,10 @@ if (import.meta.env.VITE_WORKER_DOMAIN?.includes("staging") || import.meta.env.V
 } else {
   chains.push(baseSepolia);
 }
+// todo push local chain
+// if(import.meta.env.WALLET_ENV === "development") {
+//   chains.push(baseSepolia);
+// }
 
 export const frameWagmiConfig = createConfig({
   chains: chains,

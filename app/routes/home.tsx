@@ -110,6 +110,11 @@ export default function Home() {
     // player2Address is the address of the player2 or the address derived from the ens name
     const player2Address = player2AddressFromEns || player2AddressOrEnsInput;
     // validate that player2Address is a valid ethereum address
+    if (player2Address === address) {
+      setErrorCreateGame("Invite someone else to play");
+      setLoadingCreateGame(false);
+      return;
+    }
     if (!isAddress(player2Address)) {
       setErrorCreateGame("Invalid address or ens name");
       setLoadingCreateGame(false);

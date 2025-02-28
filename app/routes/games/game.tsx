@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
-import { Chess, type Move } from "chess.js";
+import { Chess, type Move, type Piece, type Square } from "chess.js";
 import type { WsMessage } from "../../../../chess-worker/src/index";
-import { signMessage, verifyMessage, signTypedData } from '@wagmi/core'
-import { useAccount, useConnections } from 'wagmi'
+import { signMessage, verifyMessage, watchContractEvent } from '@wagmi/core'
+import { useAccount, useChainId, useConnections } from 'wagmi'
 import { frameWagmiConfig } from '../../lib/wagmiconfig'
 import { Link, useParams } from "react-router";
 import type { BoardOrientation } from "react-chessboard/dist/chessboard/types";
@@ -19,6 +19,9 @@ import winGameSound from "../../sounds/win_game.mp3";
 import drawGameSound from "../../sounds/draw_game.mp3";
 import OnTheClock from "../../OnTheClock";
 import { SyncGameBtn } from "./SyncGameBtn";
+import { useToast } from "../../util/useToast";
+import type { SupportedChainId } from "../../util/contracts";
+import { contracts } from "../../util/contracts";
 export function meta({ params }: { params: { gameId: string } }) {
   return [
     { name: "description", content: `Chess Game ${params.gameId}` },
@@ -83,6 +86,14 @@ export default function Game() {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<Context.FrameContext>();
 
+  // clicking squares functionality
+  const [moveFrom, setMoveFrom] = useState("");
+  const [moveTo, setMoveTo] = useState<Square | null>(null);
+  const [optionSquares, setOptionSquares] = useState({});
+
+  const { showToast, Toast } = useToast();
+  const chainId = useChainId();
+
   useEffect(() => {
     const load = async () => {
       const context = await sdk.context;
@@ -139,14 +150,14 @@ export default function Game() {
       // play lose game sound if signed in player lost, otherwise play win game sound for everyone else
       // if game is draw, play win game sound
       if (game.isDraw()) {
-        audioPlayerDrawGame.play();
+        // audioPlayerDrawGame.play();
       } else if ((address === player1Address && game.turn() === 'w')
         || (address === player2Address && game.turn() === 'b')) {
         // If it is my turn, I lost
-        audioPlayerLoseGame.play();
+        // audioPlayerLoseGame.play();
       } else {
         // If it is not my turn, I won. or if I am a spectator, play win game sound
-        audioPlayerWinGame.play();
+        // audioPlayerWinGame.play();
       }
     }
     if (game?.isCheck()) {
@@ -161,7 +172,52 @@ export default function Game() {
         console.log("game is in check but not your turn");
       }
     }
-  }, [game, address, player1Address, player2Address, audioPlayerDrawGame, audioPlayerLoseGame, audioPlayerWinGame]);
+    // todo: enable once audio can be disabled
+    // }, [game, address, player1Address, player2Address, audioPlayerDrawGame, audioPlayerLoseGame, audioPlayerWinGame]);
+  }, [game, address, player1Address, player2Address]);
+
+  const processContractGameOverEvent = useCallback((log: any) => {
+    console.log("processContractGameOverEvent", log);
+    const { gameId, result, winner } = log.args;
+    const rawGameId = gameId;
+    const bigIntGameId = BigInt(rawGameId as string);
+    const contractGameId = Number(bigIntGameId);   // As number: 291 (if within safe range)
+    // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
+    console.log(`GameOver detected:`);
+    console.log(`  Game ID: ${contractGameId}`);
+    console.log(`  Result: ${result}`);
+    console.log(`  Winner: ${winner}`);
+    console.log('---');
+    showToast("Game result saved to Base", "success", 5000);
+
+    // if the player is the winner, prompt them to mint a winner NFT
+    if (winner === address) {
+      console.log("player is the winner!");
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    let unwatch: () => void;
+    if (game?.isGameOver()) {
+      unwatch = watchContractEvent(frameWagmiConfig, {
+        address: contracts.gamesContract[chainId as SupportedChainId].address as `0x${string}`,
+        abi: contracts.gamesContract[chainId as SupportedChainId].abi,
+        eventName: 'GameOver',
+        args: { gameId: contractGameId },
+        onLogs: (logs) => {
+          // biome-ignore lint/complexity/noForEach: <explanation>
+          logs.forEach((log) => processContractGameOverEvent(log));
+        },
+        onError: (error) => {
+          console.error('Error watching events:', error);
+        },
+      });
+    }
+
+    return () => {
+      unwatch();
+    }
+  }, [game, contractGameId, chainId, processContractGameOverEvent]);
 
   useEffect(() => {
     // Assuming player1Address and player2Address are defined elsewhere in the component
@@ -424,7 +480,7 @@ export default function Game() {
     return true;
   }
 
-  function onDrop(sourceSquare: string, targetSquare: string, piece: string) {
+  function onDrop(sourceSquare: Square, targetSquare: Square, piece: Piece) {
     console.log("onDrop game:", game, sourceSquare, targetSquare, piece);
     playDropChessPieceSound();
 
@@ -478,6 +534,104 @@ export default function Game() {
       // illegal move
       console.log("error invalid move:", error);
       return false;
+    }
+  }
+
+  function getMoveOptions(square: Square) {
+    if (!game) {
+      console.error("game not initialized");
+      return false;
+    }
+    const moves = game.moves({
+      square,
+      verbose: true
+    });
+    if (moves.length === 0) {
+      setOptionSquares({});
+      return false;
+    }
+    const newSquares: Record<Square, { background: string, borderRadius?: string }> = {};
+    moves.map(move => {
+      newSquares[move.to] = {
+        background: game.get(move.to) && game?.get(move.to)?.color !== game?.get(square)?.color ? "radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)" : "radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)",
+        borderRadius: "50%"
+      };
+      return move;
+    });
+    newSquares[square] = {
+      background: "rgba(255, 255, 0, 0.4)" // yellow
+    };
+    setOptionSquares(newSquares);
+    return true;
+  }
+
+  function onSquareClick(square: Square, piece: Piece) {
+    console.log("onSquareClick", square, piece);
+    if (!game) {
+      console.error("game not initialized");
+      return;
+    }
+    // setRightClickedSquares({});
+
+    // from square
+    if (!moveFrom) {
+      const hasMoveOptions = getMoveOptions(square);
+      if (hasMoveOptions) setMoveFrom(square);
+      return;
+    }
+
+    // to square
+    if (!moveTo) {
+      // check if valid move before showing dialog
+      const moves = game.moves({
+        moveFrom,
+        verbose: true
+      });
+      const foundMove = moves.find(m => m.from === moveFrom && m.to === square);
+      // not a valid move
+      if (!foundMove) {
+        // check if clicked on new piece
+        const hasMoveOptions = getMoveOptions(square);
+        // if new piece, setMoveFrom, otherwise clear moveFrom
+        setMoveFrom(hasMoveOptions ? square : "");
+        return;
+      }
+
+      // valid move
+      setMoveTo(square);
+
+      // if promotion move
+      // if (foundMove.color === "w" && foundMove.piece === "p" && square[1] === "8" || foundMove.color === "b" && foundMove.piece === "p" && square[1] === "1") {
+      //   setShowPromotionDialog(true);
+      //   return;
+      // }
+
+      // is normal move
+      const isMoveValid = onDrop(moveFrom as Square, square, piece);
+      if (!isMoveValid) {
+        const hasMoveOptions = getMoveOptions(square);
+        if (hasMoveOptions) setMoveFrom(square);
+        return;
+      }
+      // const gameCopy = new Chess();
+      // gameCopy.loadPgn(game.pgn());
+      // const move = gameCopy.move({
+      //   from: moveFrom,
+      //   to: square,
+      //   promotion: "q"
+      // });
+
+      // if invalid, setMoveFrom and getMoveOptions
+      // if (move === null) {
+      //   const hasMoveOptions = getMoveOptions(square);
+      //   if (hasMoveOptions) setMoveFrom(square);
+      //   return;
+      // }
+      // updateGame(gameCopy); // game updated in onDrop
+      setMoveFrom("");
+      setMoveTo(null);
+      setOptionSquares({});
+      return;
     }
   }
 
@@ -589,18 +743,33 @@ export default function Game() {
           {/* If address is player1 or not player2, show player2's address on top. 
           Board orientation is white on bottom by default. */}
           <div className="flex flex-row pb-2 items-center justify-between">
-            <span><DisplayAddress address={topAddress as `0x${string}`} /></span>
+            <span><DisplayAddress address={topAddress as `0x${string}`} emphasize={playerOnTheClock === topAddress} /></span>
             {playerOnTheClock === topAddress && <OnTheClock />}
           </div>
           {game &&
-            <Chessboard position={game.fen()} onPieceDrop={onDrop}
+            <Chessboard
+              position={game.fen()}
+              onPieceDrop={onDrop}
+              onSquareClick={onSquareClick}
+              // onPieceDrop={(sourceSquare, targetSquare, piece) => { console.log("onPieceDrop", sourceSquare, targetSquare, piece); return onDrop(sourceSquare, targetSquare, piece) }}
+              // onSquareClick={(square) => { console.log("onSquareClick", square); return onSquareClick(square) }}
+              // onPieceDragBegin={() => console.log("onPieceDragBegin")}
+              // onPieceDragEnd={() => console.log("onPieceDragEnd")}
+              // onPieceDrop={() => { console.log("onPieceDrop"); return false }}
+              // onPieceClick={() => console.log("onPieceClick")}
+              // onSquareClick={() => console.log("onSquareClick")}
               boardOrientation={boardOrientation}
-              arePiecesDraggable={address === player1Address || address === player2Address} />
+              arePiecesDraggable={address === player1Address || address === player2Address}
+              customSquareStyles={{
+                // ...moveSquares,
+                ...optionSquares,
+                // ...rightClickedSquares
+              }} />
           }
           {/* If address is player1 or not player2, show player1's address on bottom. 
           Board orientation is white on bottom by default. */}
           <div className="flex flex-row pt-2 items-center justify-between">
-            <span><DisplayAddress address={bottomAddress as `0x${string}`} /></span>
+            <span><DisplayAddress address={bottomAddress as `0x${string}`} emphasize={playerOnTheClock === bottomAddress} /></span>
             {playerOnTheClock === bottomAddress && <OnTheClock />}
           </div>
         </div>
@@ -609,11 +778,10 @@ export default function Game() {
         <div className="w-full md:w-1/2 border-gray-200 flex flex-col gap-2 p-2 break-words">
           {game && <p>{game.isGameOver() === true && `Game Over! ${game.turn() === 'w' ? 'Black Wins!' : 'White Wins!'}`}</p>}
           {game &&
-            <p>{game.isGameOver() === false
-              && (game.turn() === 'b' ? 'Black\'s Turn.' : 'White\'s Turn.')} {game.isCheck() ? "Check!" : ""}</p>}
-          {game && <p>Moves made: {game.history().length}</p>}
+            <p>{game.isGameOver() === false && game.isCheck() ? "Check!" : ""}</p>}
+          {game && !game.isGameOver() && <p>Move #{game.history().length + 1}</p>}
           <h3 className="pt-6 text-h3">Verifiable game state</h3>
-          <SyncGameBtn game={game} message={latestSignedMessage} signer={latestSignedPlayer} signature={latestSignedSignature} />
+          <SyncGameBtn game={game} contractGameId={contractGameId} message={latestSignedMessage} signer={latestSignedPlayer} signature={latestSignedSignature} />
           < div className="flex flex-row gap-2 items-center">
             <span className="text-sm">Download</span>
             <button
@@ -695,6 +863,7 @@ export default function Game() {
           </details>
         </div>
       </div >
+      <Toast />
     </>
   );
 }
