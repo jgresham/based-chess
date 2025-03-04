@@ -26,21 +26,22 @@ const walletConnectors = connectorsForWallets([
   { appName: 'Based Chess', projectId: 'fc0abe40a98d684825700df3507dc133' },
 );
 
-let chains = [base];
+const chains: Chain[] = [base];
 if (import.meta.env.VITE_WORKER_DOMAIN?.includes("staging") || import.meta.env.VITE_WORKER_DOMAIN?.includes("localhost")) {
   chains.push(baseSepolia);
-} else {
-  chains.push(baseSepolia);
 }
+// else {
+//   chains.push(baseSepolia);
+// }
 // todo push local chain
 // if(import.meta.env.WALLET_ENV === "development") {
 //   chains.push(baseSepolia);
 // }
 
 export const frameWagmiConfig = createConfig({
-  chains: chains,
+  chains: chains as [Chain, ...Chain[]],
   transports: {
-    [base.id]: http('https://eth-mainnet.g.alchemy.com/v2/xFjQGD9_D32OdWAY-iyViQ7xHYHIUF-i'),
+    [base.id]: http('https://base-mainnet.g.alchemy.com/v2/xFjQGD9_D32OdWAY-iyViQ7xHYHIUF-i'),
     [baseSepolia.id]: http('https://base-sepolia.g.alchemy.com/v2/xFjQGD9_D32OdWAY-iyViQ7xHYHIUF-i'),
   },
   connectors: [frameConnector(),

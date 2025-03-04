@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess, type Move, type Piece, type Square } from "chess.js";
 import type { WsMessage } from "../../../../chess-worker/src/index";
-import { signMessage, verifyMessage, watchContractEvent } from '@wagmi/core'
-import { useAccount, useChainId, useConnections } from 'wagmi'
+import { signMessage, verifyMessage, waitForTransactionReceipt, watchContractEvent, writeContract } from '@wagmi/core'
+import { useAccount, useChainId, useConnections, useFeeData, useReadContract, useSimulateContract, useWriteContract } from 'wagmi'
 import { frameWagmiConfig } from '../../lib/wagmiconfig'
 import { Link, useParams } from "react-router";
 import type { BoardOrientation } from "react-chessboard/dist/chessboard/types";
@@ -22,6 +22,8 @@ import { SyncGameBtn } from "./SyncGameBtn";
 import { useToast } from "../../util/useToast";
 import type { SupportedChainId } from "../../util/contracts";
 import { contracts } from "../../util/contracts";
+import { stringify } from "../../util/stringifyContractData";
+
 export function meta({ params }: { params: { gameId: string } }) {
   return [
     { name: "description", content: `Chess Game ${params.gameId}` },
@@ -94,6 +96,95 @@ export default function Game() {
   const { showToast, Toast } = useToast();
   const chainId = useChainId();
 
+  const [winner, setWinner] = useState<`0x${string}` | undefined>();
+  const [isNFTMinted, setIsNFTMinted] = useState(false);
+  const [isNFTReadyToMint, setIsNFTReadyToMint] = useState(false);
+  const [nftTokenId, setNftTokenId] = useState<string | undefined>();
+  const [nftMetadata, setNftMetadata] = useState<any | undefined>();
+  // const { writeContract: writeContractContractGame, isPending: isPendingContractGame, error: errorContractGame, data: txHashContractGame } = useWriteContract();
+  const { data: contractGameData, isPending: isPendingContractGame, error: errorContractGame } = useReadContract({
+    address: contracts.gamesContract[chainId as SupportedChainId].address as `0x${string}`,
+    abi: contracts.gamesContract[chainId as SupportedChainId].abi,
+    functionName: "getGame",
+    args: [contractGameId],
+  });
+  const { data: nftUriSetData, isPending: isPendingNftUriSet, error: errorNftUriSet } = useReadContract({
+    address: contracts.nftContract[chainId as SupportedChainId].address as `0x${string}`,
+    abi: contracts.nftContract[chainId as SupportedChainId].abi,
+    functionName: "getNftUri",
+    args: [contracts.gamesContract[chainId as SupportedChainId].address, contractGameId],
+  });
+  const { data: gameToMintedTokenIdData, isPending: isPendingGameToMintedTokenId, error: errorGameToMintedTokenId } = useReadContract({
+    address: contracts.nftContract[chainId as SupportedChainId].address as `0x${string}`,
+    abi: contracts.nftContract[chainId as SupportedChainId].abi,
+    functionName: "gameToMintedTokenId",
+    args: [contracts.gamesContract[chainId as SupportedChainId].address, contractGameId],
+  });
+
+  useEffect(() => {
+    console.log("Tanstack: isNFTMinted", isNFTMinted);
+    console.log("Tanstack: nftUriSetData", nftUriSetData);
+    if (isNFTMinted && nftUriSetData) {
+      fetch(`https://ipfs.io/ipfs/${nftUriSetData.split("//")[1]}`).then(res => res.json()).then(data => {
+        console.log("Tanstack: nftUriMetadata", data);
+        setNftMetadata(data);
+      })
+    }
+  }, [isNFTMinted, nftUriSetData]);
+
+  useEffect(() => {
+    console.log("Tanstack: gameToMintedTokenIdData", gameToMintedTokenIdData);
+    // is not undefined, or not empty string, or not 0
+    if (gameToMintedTokenIdData) {
+      setIsNFTMinted(true);
+      setNftTokenId(gameToMintedTokenIdData.toString());
+    }
+  }, [gameToMintedTokenIdData]);
+
+  useEffect(() => {
+    console.log("Tanstack: isPendingContractGame", isPendingContractGame);
+    console.log("Tanstack: errorContractGame", errorContractGame);
+    console.log("Tanstack: contractGameData", contractGameData);
+    if (Array.isArray(contractGameData)) {
+      const [gameIdBigInt, creator, player1, player2, result, winnerIfNotDraw, updatesSignatures] = contractGameData as [bigint, `0x${string}`, `0x${string}`, `0x${string}`, number, `0x${string}`, `0x${string}`];
+      if (result === 1 && winnerIfNotDraw !== undefined && winnerIfNotDraw !== "0x0000000000000000000000000000000000000000") {
+        setWinner(winnerIfNotDraw);
+      }
+    }
+  }, [contractGameData, isPendingContractGame, errorContractGame]);
+
+  useEffect(() => {
+    console.log("Tanstack: isPendingNftUriSet", isPendingNftUriSet);
+    console.log("Tanstack: errorNftUriSet", errorNftUriSet);
+    console.log("Tanstack: nftUriSetData", nftUriSetData);
+    console.log("Tanstack: address", address);
+    console.log("Tanstack: winner", winner);
+
+    // nftUriSetData is not undefined or empty string
+    if (nftUriSetData && address === winner) {
+      console.log("Tanstack: nftUriSetData", nftUriSetData);
+      setIsNFTReadyToMint(true);
+    }
+  }, [nftUriSetData, isPendingNftUriSet, errorNftUriSet, address, winner]);
+
+  // useEffect(() => {
+  //   if (!isPendingContractGame && contractGameId !== undefined && chainId !== undefined && writeContractContractGame) {
+  //     // todo: rate limit? looks like retry defaults to 0
+  //     console.log("Tanstack: calling contract getGame()");
+  //     writeContractContractGame({
+  //       address: contracts.gamesContract[chainId as SupportedChainId].address as `0x${string}`,
+  //       abi: contracts.gamesContract[chainId as SupportedChainId].abi,
+  //       functionName: "getGame",
+  //       args: [contractGameId],
+  //     });
+  //   }
+  //   console.log("Tanstack: txHashContractGame", txHashContractGame);
+  //   console.log("Tanstack: isPendingContractGame", isPendingContractGame);
+  //   console.log("Tanstack: errorContractGame", errorContractGame);
+  //   console.log("Tanstack: contractGameId", contractGameId);
+  //   console.log("Tanstack: chainId", chainId);
+  // }, [contractGameId, chainId, writeContractContractGame, txHashContractGame, isPendingContractGame, errorContractGame]);
+
   useEffect(() => {
     const load = async () => {
       const context = await sdk.context;
@@ -143,6 +234,8 @@ export default function Game() {
     };
   }, []);
 
+
+
   useEffect(() => {
     console.log("useEffect game:", game);
     if (game?.isGameOver()) {
@@ -178,7 +271,7 @@ export default function Game() {
 
   const processContractGameOverEvent = useCallback((log: any) => {
     console.log("processContractGameOverEvent", log);
-    const { gameId, result, winner } = log.args;
+    const { gameId, result, winnerIfNotDraw, loserIfNotDraw, creator } = log.args;
     const rawGameId = gameId;
     const bigIntGameId = BigInt(rawGameId as string);
     const contractGameId = Number(bigIntGameId);   // As number: 291 (if within safe range)
@@ -186,15 +279,21 @@ export default function Game() {
     console.log(`GameOver detected:`);
     console.log(`  Game ID: ${contractGameId}`);
     console.log(`  Result: ${result}`);
-    console.log(`  Winner: ${winner}`);
+    console.log(`  Winner: ${winnerIfNotDraw}`);
+    console.log(`  Loser: ${loserIfNotDraw}`);
+    console.log(`  Creator: ${creator}`);
     console.log('---');
     showToast("Game result saved to Base", "success", 5000);
 
     // if the player is the winner, prompt them to mint a winner NFT
-    if (winner === address) {
+    if (result === 1) {
+      // draw
       console.log("player is the winner!");
+      setWinner(winnerIfNotDraw);
+    } else if (winnerIfNotDraw === address) {
+      console.log("game is a draw");
     }
-  }, [showToast]);
+  }, [showToast, address]);
 
   useEffect(() => {
     let unwatch: () => void;
@@ -215,9 +314,75 @@ export default function Game() {
     }
 
     return () => {
-      unwatch();
+      if (unwatch) unwatch();
     }
   }, [game, contractGameId, chainId, processContractGameOverEvent]);
+
+  const processNftUriSetEvent = useCallback((log: any) => {
+    console.log("processNftUriSetEvent", log);
+    const { gamesContractAddress, gameId, nftUri } = log.args;
+    const rawGameId = gameId;
+    const bigIntGameId = BigInt(rawGameId as string);
+    const contractGameId = Number(bigIntGameId);   // As number: 291 (if within safe range)
+    // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
+    console.log(`NftUriSet detected:`);
+    console.log(`  Games Contract Address: ${gamesContractAddress}`);
+    console.log(`  Game ID: ${contractGameId}`);
+    console.log(`  Nft URI: ${nftUri}`);
+    console.log('---');
+
+    // if the player is the winner, prompt them to mint a winner NFT
+    if (winner === address) {
+      console.log("nft uri is set and player is the winner!");
+      setIsNFTReadyToMint(true);
+    }
+  }, [address, winner]);
+
+  const promptUserToMintNFT = useCallback(async () => {
+    // todo simulate contract
+    const txHash = await writeContract(frameWagmiConfig, {
+      address: contracts.nftContract[chainId as SupportedChainId].address as `0x${string}`,
+      abi: contracts.nftContract[chainId as SupportedChainId].abi,
+      functionName: "mintWinNFT",
+      args: [contracts.gamesContract[chainId as SupportedChainId].address, contractGameId], // gameId, message, signature, address signer
+    });
+    console.log("promptUserToMintNFT txHash: ", txHash);
+    const tx = await waitForTransactionReceipt(frameWagmiConfig, {
+      hash: txHash,
+    });
+    console.log("promptUserToMintNFT tx: ", tx);
+  }, [chainId, contractGameId]);
+
+  useEffect(() => {
+    if (isNFTReadyToMint && address === winner && !isNFTMinted) {
+      console.log("nft is ready to mint");
+      // promptUserToMintNFT();
+    }
+  }, [isNFTReadyToMint, address, winner, isNFTMinted]);
+
+  // watch for nft ready event - NftUriSet
+  useEffect(() => {
+    let unwatch: () => void;
+    if (game?.isGameOver()) {
+      unwatch = watchContractEvent(frameWagmiConfig, {
+        address: contracts.nftContract[chainId as SupportedChainId].address as `0x${string}`,
+        abi: contracts.nftContract[chainId as SupportedChainId].abi,
+        eventName: 'NftUriSet',
+        args: { gamesContractAddress: contracts.gamesContract[chainId as SupportedChainId].address as `0x${string}`, gameId: contractGameId },
+        onLogs: (logs) => {
+          // biome-ignore lint/complexity/noForEach: <explanation>
+          logs.forEach((log) => processNftUriSetEvent(log));
+        },
+        onError: (error) => {
+          console.error('Error watching events:', error);
+        },
+      });
+    }
+
+    return () => {
+      if (unwatch) unwatch();
+    }
+  }, [game, contractGameId, chainId, processNftUriSetEvent]);
 
   useEffect(() => {
     // Assuming player1Address and player2Address are defined elsewhere in the component
@@ -781,7 +946,6 @@ export default function Game() {
             <p>{game.isGameOver() === false && game.isCheck() ? "Check!" : ""}</p>}
           {game && !game.isGameOver() && <p>Move #{game.history().length + 1}</p>}
           <h3 className="pt-6 text-h3">Verifiable game state</h3>
-          <SyncGameBtn game={game} contractGameId={contractGameId} message={latestSignedMessage} signer={latestSignedPlayer} signature={latestSignedSignature} />
           < div className="flex flex-row gap-2 items-center">
             <span className="text-sm">Download</span>
             <button
@@ -828,6 +992,12 @@ export default function Game() {
               {latestPlayer2Signature && <span>Latest Player 2 Signature: {latestPlayer2Signature}</span>}
               <br />
               {latestPlayer2Message && <span>Latest Player 2 PGN Message: {latestPlayer2Message}</span>}
+              <br />
+              {<span>Contract Game ID: {contractGameId}</span>}
+              <br />
+              {<span>Contract Game Address: {contracts.gamesContract[chainId as SupportedChainId].address}</span>}
+              <br />
+              {<span>Contract NFT address: {contracts.nftContract[chainId as SupportedChainId].address}</span>}
             </p>
           </details>
 
@@ -852,6 +1022,19 @@ export default function Game() {
           <details>
             <summary className="text-sm">Logs</summary>
             <div className="flex flex-col gap-2">
+              {isNFTMinted && <p>NFT Minted! Token ID: {nftTokenId}</p>}
+              {nftMetadata && <img src={`https://ipfs.io/ipfs/${nftMetadata?.image.split("//")[1]}`} alt="NFT" />}
+              {isNFTReadyToMint && !isNFTMinted && <button type="button" onClick={() => {
+                promptUserToMintNFT();
+              }}>Mint NFT</button>}
+              {/* hide sync game button if contract game result != 0 or if a winner is already declared */}
+              <SyncGameBtn game={game} contractGameId={contractGameId} message={latestSignedMessage} signer={latestSignedPlayer} signature={latestSignedSignature} />
+              {<p>NFT URI Data: {JSON.stringify(nftUriSetData)}</p>}
+              {<p>NFT URI pending: {JSON.stringify(isPendingNftUriSet)}</p>}
+              {<p>NFT URI error: {JSON.stringify(errorNftUriSet)}</p>}
+              {<p>Game to Minted Token ID Data: {stringify(gameToMintedTokenIdData)}</p>}
+              {<p>Game to Minted Token ID pending: {JSON.stringify(isPendingGameToMintedTokenId)}</p>}
+              {<p>Game to Minted Token ID error: {JSON.stringify(errorGameToMintedTokenId)}</p>}
               {logs.map((log, index) => <p key={index}>{log}</p>)}
             </div>
           </details>

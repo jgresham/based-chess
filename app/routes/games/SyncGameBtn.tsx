@@ -1,11 +1,19 @@
 import type { Chess } from "chess.js";
-import { useChainId, useWriteContract } from "wagmi";
+import { useChainId, useSimulateContract, useWriteContract } from "wagmi";
 import { contracts, type SupportedChainId } from "../../util/contracts";
-import { toBytes } from "viem";
+import { frameWagmiConfig } from "../../lib/wagmiconfig";
 
 export function SyncGameBtn({ game, contractGameId, message, signer, signature }: { game?: Chess, contractGameId?: number, message?: string, signer?: `0x${string}`, signature?: `0x${string}` }) {
   const { writeContract, isPending, error, data: txHash } = useWriteContract();
   const chainId = useChainId();
+  console.log("SyncGameBtn", contractGameId, message, signature, signer, chainId);
+  const { data: simulation, error: simulationError } = useSimulateContract({
+    address: contracts.gamesContract[chainId as SupportedChainId].address as `0x${string}`,
+    abi: contracts.gamesContract[chainId as SupportedChainId].abi,
+    functionName: "syncGame",
+    args: [contractGameId, message, signature, signer], // gameId, message, signature, address signer
+  });
+
 
   const onClickSyncGame = async () => {
     console.log("onClickSyncGame");
@@ -31,12 +39,15 @@ export function SyncGameBtn({ game, contractGameId, message, signer, signature }
       return;
     }
 
-    const tx = await writeContract({
-      address: contracts.gamesContract[chainId as SupportedChainId].address as `0x${string}`,
-      abi: contracts.gamesContract[chainId as SupportedChainId].abi,
-      functionName: "syncGame",
-      args: [contractGameId, message, signature, signer], // gameId, message, signature, address signer
-    });
+    console.log("simulateResult: ", simulation);
+
+    if (!simulation) {
+      console.error("simulation not found");
+      console.error(simulationError);
+      console.error(chainId, contractGameId, message, signature, signer)
+      return;
+    }
+    const tx = await writeContract({ ...simulation.request });
     console.log("tx: ", tx);
   }
 
