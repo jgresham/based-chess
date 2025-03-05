@@ -105,39 +105,50 @@ export default function Home() {
     setErrorCreateGame("");
     setLoadingCreateGame(true);
     const httpsProtocol = window.location.protocol === "https:" ? "https" : "https";
-    const domain = "chess-worker.johnsgresham.workers.dev";
+    const domain = import.meta.env.VITE_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
     const url = `${httpsProtocol}://${domain}/game`;
     // player2Address is the address of the player2 or the address derived from the ens name
     const player2Address = player2AddressFromEns || player2AddressOrEnsInput;
     // validate that player2Address is a valid ethereum address
+    if (player2Address === address) {
+      setErrorCreateGame("Invite someone else to play");
+      setLoadingCreateGame(false);
+      return;
+    }
     if (!isAddress(player2Address)) {
       setErrorCreateGame("Invalid address or ens name");
       setLoadingCreateGame(false);
       return;
     }
-    const response = await fetch(url, {
-      method: "POST",
-      body: JSON.stringify({ player1Address: address, player2Address }),
-    });
-    console.log("response:", response);
-    const data: { gameId: string } = await response.json();
-    console.log("data:", data);
-    const gameId = data.gameId;
-    if (!gameId) {
-      console.error("No gameId in response");
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        body: JSON.stringify({ player1Address: address, player2Address }),
+      });
+      console.log("response:", response);
+      const data: { gameId: string } = await response.json();
+      console.log("data:", data);
+      const gameId = data.gameId;
+      if (!gameId) {
+        console.error("No gameId in response");
+        setErrorCreateGame("Unable to create game");
+        setLoadingCreateGame(false);
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      navigate(`/games/${gameId}`);
+      setLoadingCreateGame(false);
+    } catch (error) {
+      console.error("Error creating game:", error);
       setErrorCreateGame("Unable to create game");
       setLoadingCreateGame(false);
-      return;
     }
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    navigate(`/games/${gameId}`);
-    setLoadingCreateGame(false);
   }
 
   const getUserGames = async () => {
     setErrorCreateGame("");
     const httpsProtocol = window.location.protocol === "https:" ? "https" : "http";
-    const domain = "chess-worker.johnsgresham.workers.dev";
+    const domain = import.meta.env.VITE_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
     // const domain = "localhost:8787";
     const url = `${httpsProtocol}://${domain}/user/games?address=${address}`;
     const response = await fetch(url, {

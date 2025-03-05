@@ -1,10 +1,9 @@
-"use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
-import { Chess, type Move } from "chess.js";
+import { Chess, type Move, type Piece, type Square } from "chess.js";
 import type { WsMessage } from "../../../../chess-worker/src/index";
-import { signMessage, verifyMessage, signTypedData } from '@wagmi/core'
-import { useAccount, useConnections } from 'wagmi'
+import { signMessage, verifyMessage, waitForTransactionReceipt, watchContractEvent, writeContract } from '@wagmi/core'
+import { useAccount, useChainId, useConnections, useFeeData, useReadContract, useSimulateContract, useWriteContract } from 'wagmi'
 import { frameWagmiConfig } from '../../lib/wagmiconfig'
 import { Link, useParams } from "react-router";
 import type { BoardOrientation } from "react-chessboard/dist/chessboard/types";
@@ -18,6 +17,13 @@ import dropChessPieceSound from "../../sounds/drop_piece.mp3";
 import loseGameSound from "../../sounds/lose_game.mp3";
 import winGameSound from "../../sounds/win_game.mp3";
 import drawGameSound from "../../sounds/draw_game.mp3";
+import OnTheClock from "../../OnTheClock";
+import { SyncGameBtn } from "./SyncGameBtn";
+import { useToast } from "../../util/useToast";
+import type { SupportedChainId } from "../../util/contracts";
+import { contracts } from "../../util/contracts";
+import { stringify } from "../../util/stringifyContractData";
+
 export function meta({ params }: { params: { gameId: string } }) {
   return [
     { name: "description", content: `Chess Game ${params.gameId}` },
@@ -68,6 +74,7 @@ export default function Game() {
   const [latestPlayer1Message, setLatestPlayer1Message] = useState<string | undefined>();
   const [latestPlayer2Signature, setLatestPlayer2Signature] = useState<`0x${string}` | undefined>();
   const [latestPlayer2Message, setLatestPlayer2Message] = useState<string | undefined>();
+  const [contractGameId, setContractGameId] = useState<number | undefined>();
   const [isVisible, setIsVisible] = useState(true);
   const isInactive = useInactive(1800000); // after 2 minutes, allow websocket to close
   const [logs, setLogs] = useState<string[]>([navigator.userAgent]);
@@ -80,6 +87,103 @@ export default function Game() {
 
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<Context.FrameContext>();
+
+  // clicking squares functionality
+  const [moveFrom, setMoveFrom] = useState("");
+  const [moveTo, setMoveTo] = useState<Square | null>(null);
+  const [optionSquares, setOptionSquares] = useState({});
+
+  const { showToast, Toast } = useToast();
+  const chainId = useChainId();
+
+  const [winner, setWinner] = useState<`0x${string}` | undefined>();
+  const [isNFTMinted, setIsNFTMinted] = useState(false);
+  const [isNFTReadyToMint, setIsNFTReadyToMint] = useState(false);
+  const [nftTokenId, setNftTokenId] = useState<string | undefined>();
+  const [nftMetadata, setNftMetadata] = useState<any | undefined>();
+  // const { writeContract: writeContractContractGame, isPending: isPendingContractGame, error: errorContractGame, data: txHashContractGame } = useWriteContract();
+  const { data: contractGameData, isPending: isPendingContractGame, error: errorContractGame } = useReadContract({
+    address: contracts.gamesContract[chainId as SupportedChainId].address as `0x${string}`,
+    abi: contracts.gamesContract[chainId as SupportedChainId].abi,
+    functionName: "getGame",
+    args: [contractGameId],
+  });
+  const { data: nftUriSetData, isPending: isPendingNftUriSet, error: errorNftUriSet } = useReadContract({
+    address: contracts.nftContract[chainId as SupportedChainId].address as `0x${string}`,
+    abi: contracts.nftContract[chainId as SupportedChainId].abi,
+    functionName: "getNftUri",
+    args: [contracts.gamesContract[chainId as SupportedChainId].address, contractGameId],
+  });
+  const { data: gameToMintedTokenIdData, isPending: isPendingGameToMintedTokenId, error: errorGameToMintedTokenId } = useReadContract({
+    address: contracts.nftContract[chainId as SupportedChainId].address as `0x${string}`,
+    abi: contracts.nftContract[chainId as SupportedChainId].abi,
+    functionName: "gameToMintedTokenId",
+    args: [contracts.gamesContract[chainId as SupportedChainId].address, contractGameId],
+  });
+
+  useEffect(() => {
+    console.log("Tanstack: isNFTMinted", isNFTMinted);
+    console.log("Tanstack: nftUriSetData", nftUriSetData);
+    if (isNFTMinted && nftUriSetData) {
+      fetch(`https://ipfs.io/ipfs/${nftUriSetData.split("//")[1]}`).then(res => res.json()).then(data => {
+        console.log("Tanstack: nftUriMetadata", data);
+        setNftMetadata(data);
+      })
+    }
+  }, [isNFTMinted, nftUriSetData]);
+
+  useEffect(() => {
+    console.log("Tanstack: gameToMintedTokenIdData", gameToMintedTokenIdData);
+    // is not undefined, or not empty string, or not 0
+    if (gameToMintedTokenIdData) {
+      setIsNFTMinted(true);
+      setNftTokenId(gameToMintedTokenIdData.toString());
+    }
+  }, [gameToMintedTokenIdData]);
+
+  useEffect(() => {
+    console.log("Tanstack: isPendingContractGame", isPendingContractGame);
+    console.log("Tanstack: errorContractGame", errorContractGame);
+    console.log("Tanstack: contractGameData", contractGameData);
+    if (Array.isArray(contractGameData)) {
+      const [gameIdBigInt, creator, player1, player2, result, winnerIfNotDraw, updatesSignatures] = contractGameData as [bigint, `0x${string}`, `0x${string}`, `0x${string}`, number, `0x${string}`, `0x${string}`];
+      if (result === 1 && winnerIfNotDraw !== undefined && winnerIfNotDraw !== "0x0000000000000000000000000000000000000000") {
+        setWinner(winnerIfNotDraw);
+      }
+    }
+  }, [contractGameData, isPendingContractGame, errorContractGame]);
+
+  useEffect(() => {
+    console.log("Tanstack: isPendingNftUriSet", isPendingNftUriSet);
+    console.log("Tanstack: errorNftUriSet", errorNftUriSet);
+    console.log("Tanstack: nftUriSetData", nftUriSetData);
+    console.log("Tanstack: address", address);
+    console.log("Tanstack: winner", winner);
+
+    // nftUriSetData is not undefined or empty string
+    if (nftUriSetData && address === winner) {
+      console.log("Tanstack: nftUriSetData", nftUriSetData);
+      setIsNFTReadyToMint(true);
+    }
+  }, [nftUriSetData, isPendingNftUriSet, errorNftUriSet, address, winner]);
+
+  // useEffect(() => {
+  //   if (!isPendingContractGame && contractGameId !== undefined && chainId !== undefined && writeContractContractGame) {
+  //     // todo: rate limit? looks like retry defaults to 0
+  //     console.log("Tanstack: calling contract getGame()");
+  //     writeContractContractGame({
+  //       address: contracts.gamesContract[chainId as SupportedChainId].address as `0x${string}`,
+  //       abi: contracts.gamesContract[chainId as SupportedChainId].abi,
+  //       functionName: "getGame",
+  //       args: [contractGameId],
+  //     });
+  //   }
+  //   console.log("Tanstack: txHashContractGame", txHashContractGame);
+  //   console.log("Tanstack: isPendingContractGame", isPendingContractGame);
+  //   console.log("Tanstack: errorContractGame", errorContractGame);
+  //   console.log("Tanstack: contractGameId", contractGameId);
+  //   console.log("Tanstack: chainId", chainId);
+  // }, [contractGameId, chainId, writeContractContractGame, txHashContractGame, isPendingContractGame, errorContractGame]);
 
   useEffect(() => {
     const load = async () => {
@@ -130,6 +234,8 @@ export default function Game() {
     };
   }, []);
 
+
+
   useEffect(() => {
     console.log("useEffect game:", game);
     if (game?.isGameOver()) {
@@ -137,14 +243,14 @@ export default function Game() {
       // play lose game sound if signed in player lost, otherwise play win game sound for everyone else
       // if game is draw, play win game sound
       if (game.isDraw()) {
-        audioPlayerDrawGame.play();
+        // audioPlayerDrawGame.play();
       } else if ((address === player1Address && game.turn() === 'w')
         || (address === player2Address && game.turn() === 'b')) {
         // If it is my turn, I lost
-        audioPlayerLoseGame.play();
+        // audioPlayerLoseGame.play();
       } else {
         // If it is not my turn, I won. or if I am a spectator, play win game sound
-        audioPlayerWinGame.play();
+        // audioPlayerWinGame.play();
       }
     }
     if (game?.isCheck()) {
@@ -159,7 +265,124 @@ export default function Game() {
         console.log("game is in check but not your turn");
       }
     }
-  }, [game, address, player1Address, player2Address, audioPlayerDrawGame, audioPlayerLoseGame, audioPlayerWinGame]);
+    // todo: enable once audio can be disabled
+    // }, [game, address, player1Address, player2Address, audioPlayerDrawGame, audioPlayerLoseGame, audioPlayerWinGame]);
+  }, [game, address, player1Address, player2Address]);
+
+  const processContractGameOverEvent = useCallback((log: any) => {
+    console.log("processContractGameOverEvent", log);
+    const { gameId, result, winnerIfNotDraw, loserIfNotDraw, creator } = log.args;
+    const rawGameId = gameId;
+    const bigIntGameId = BigInt(rawGameId as string);
+    const contractGameId = Number(bigIntGameId);   // As number: 291 (if within safe range)
+    // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
+    console.log(`GameOver detected:`);
+    console.log(`  Game ID: ${contractGameId}`);
+    console.log(`  Result: ${result}`);
+    console.log(`  Winner: ${winnerIfNotDraw}`);
+    console.log(`  Loser: ${loserIfNotDraw}`);
+    console.log(`  Creator: ${creator}`);
+    console.log('---');
+    showToast("Game result saved to Base", "success", 5000);
+
+    // if the player is the winner, prompt them to mint a winner NFT
+    if (result === 1) {
+      // draw
+      console.log("player is the winner!");
+      setWinner(winnerIfNotDraw);
+    } else if (winnerIfNotDraw === address) {
+      console.log("game is a draw");
+    }
+  }, [showToast, address]);
+
+  useEffect(() => {
+    let unwatch: () => void;
+    if (game?.isGameOver()) {
+      unwatch = watchContractEvent(frameWagmiConfig, {
+        address: contracts.gamesContract[chainId as SupportedChainId].address as `0x${string}`,
+        abi: contracts.gamesContract[chainId as SupportedChainId].abi,
+        eventName: 'GameOver',
+        args: { gameId: contractGameId },
+        onLogs: (logs) => {
+          // biome-ignore lint/complexity/noForEach: <explanation>
+          logs.forEach((log) => processContractGameOverEvent(log));
+        },
+        onError: (error) => {
+          console.error('Error watching events:', error);
+        },
+      });
+    }
+
+    return () => {
+      if (unwatch) unwatch();
+    }
+  }, [game, contractGameId, chainId, processContractGameOverEvent]);
+
+  const processNftUriSetEvent = useCallback((log: any) => {
+    console.log("processNftUriSetEvent", log);
+    const { gamesContractAddress, gameId, nftUri } = log.args;
+    const rawGameId = gameId;
+    const bigIntGameId = BigInt(rawGameId as string);
+    const contractGameId = Number(bigIntGameId);   // As number: 291 (if within safe range)
+    // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
+    console.log(`NftUriSet detected:`);
+    console.log(`  Games Contract Address: ${gamesContractAddress}`);
+    console.log(`  Game ID: ${contractGameId}`);
+    console.log(`  Nft URI: ${nftUri}`);
+    console.log('---');
+
+    // if the player is the winner, prompt them to mint a winner NFT
+    if (winner === address) {
+      console.log("nft uri is set and player is the winner!");
+      setIsNFTReadyToMint(true);
+    }
+  }, [address, winner]);
+
+  const promptUserToMintNFT = useCallback(async () => {
+    // todo simulate contract
+    const txHash = await writeContract(frameWagmiConfig, {
+      address: contracts.nftContract[chainId as SupportedChainId].address as `0x${string}`,
+      abi: contracts.nftContract[chainId as SupportedChainId].abi,
+      functionName: "mintWinNFT",
+      args: [contracts.gamesContract[chainId as SupportedChainId].address, contractGameId], // gameId, message, signature, address signer
+    });
+    console.log("promptUserToMintNFT txHash: ", txHash);
+    const tx = await waitForTransactionReceipt(frameWagmiConfig, {
+      hash: txHash,
+    });
+    console.log("promptUserToMintNFT tx: ", tx);
+  }, [chainId, contractGameId]);
+
+  useEffect(() => {
+    if (isNFTReadyToMint && address === winner && !isNFTMinted) {
+      console.log("nft is ready to mint");
+      // promptUserToMintNFT();
+    }
+  }, [isNFTReadyToMint, address, winner, isNFTMinted]);
+
+  // watch for nft ready event - NftUriSet
+  useEffect(() => {
+    let unwatch: () => void;
+    if (game?.isGameOver()) {
+      unwatch = watchContractEvent(frameWagmiConfig, {
+        address: contracts.nftContract[chainId as SupportedChainId].address as `0x${string}`,
+        abi: contracts.nftContract[chainId as SupportedChainId].abi,
+        eventName: 'NftUriSet',
+        args: { gamesContractAddress: contracts.gamesContract[chainId as SupportedChainId].address as `0x${string}`, gameId: contractGameId },
+        onLogs: (logs) => {
+          // biome-ignore lint/complexity/noForEach: <explanation>
+          logs.forEach((log) => processNftUriSetEvent(log));
+        },
+        onError: (error) => {
+          console.error('Error watching events:', error);
+        },
+      });
+    }
+
+    return () => {
+      if (unwatch) unwatch();
+    }
+  }, [game, contractGameId, chainId, processNftUriSetEvent]);
 
   useEffect(() => {
     // Assuming player1Address and player2Address are defined elsewhere in the component
@@ -213,7 +436,8 @@ export default function Game() {
 
   const startWebSocket = () => {
     const wsProtocol = window.location.protocol === "https:" ? "wss" : "wss";
-    const domain = "chess-worker.johnsgresham.workers.dev";
+    const domain = import.meta.env.VITE_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
+    // const stagingDomain = "chess-worker-staging.johnsgresham.workers.dev";
     // const domain = "localhost:8787";
     const ws = new WebSocket(
       `${wsProtocol}://${domain}/ws?gameId=${params.gameId}`,
@@ -258,6 +482,7 @@ export default function Game() {
           setLatestPlayer1Message(messageData.data.latestPlayer1Message);
           setLatestPlayer2Signature(messageData.data.latestPlayer2Signature);
           setLatestPlayer2Message(messageData.data.latestPlayer2Message);
+          setContractGameId(messageData.data.contractGameId);
 
           break;
         case "live-viewers":
@@ -294,6 +519,10 @@ export default function Game() {
     return () => {
       wsRef.current?.close();
       window.removeEventListener('beforeunload', closeWebsocket);
+      audioPlayerDrawGame.pause();
+      audioPlayerLoseGame.pause();
+      audioPlayerWinGame.pause();
+      audioPlayerDropChessPiece.pause();
     }
     // biome-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -416,7 +645,7 @@ export default function Game() {
     return true;
   }
 
-  function onDrop(sourceSquare: string, targetSquare: string, piece: string) {
+  function onDrop(sourceSquare: Square, targetSquare: Square, piece: Piece) {
     console.log("onDrop game:", game, sourceSquare, targetSquare, piece);
     playDropChessPieceSound();
 
@@ -473,6 +702,104 @@ export default function Game() {
     }
   }
 
+  function getMoveOptions(square: Square) {
+    if (!game) {
+      console.error("game not initialized");
+      return false;
+    }
+    const moves = game.moves({
+      square,
+      verbose: true
+    });
+    if (moves.length === 0) {
+      setOptionSquares({});
+      return false;
+    }
+    const newSquares: Record<Square, { background: string, borderRadius?: string }> = {};
+    moves.map(move => {
+      newSquares[move.to] = {
+        background: game.get(move.to) && game?.get(move.to)?.color !== game?.get(square)?.color ? "radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)" : "radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)",
+        borderRadius: "50%"
+      };
+      return move;
+    });
+    newSquares[square] = {
+      background: "rgba(255, 255, 0, 0.4)" // yellow
+    };
+    setOptionSquares(newSquares);
+    return true;
+  }
+
+  function onSquareClick(square: Square, piece: Piece) {
+    console.log("onSquareClick", square, piece);
+    if (!game) {
+      console.error("game not initialized");
+      return;
+    }
+    // setRightClickedSquares({});
+
+    // from square
+    if (!moveFrom) {
+      const hasMoveOptions = getMoveOptions(square);
+      if (hasMoveOptions) setMoveFrom(square);
+      return;
+    }
+
+    // to square
+    if (!moveTo) {
+      // check if valid move before showing dialog
+      const moves = game.moves({
+        moveFrom,
+        verbose: true
+      });
+      const foundMove = moves.find(m => m.from === moveFrom && m.to === square);
+      // not a valid move
+      if (!foundMove) {
+        // check if clicked on new piece
+        const hasMoveOptions = getMoveOptions(square);
+        // if new piece, setMoveFrom, otherwise clear moveFrom
+        setMoveFrom(hasMoveOptions ? square : "");
+        return;
+      }
+
+      // valid move
+      setMoveTo(square);
+
+      // if promotion move
+      // if (foundMove.color === "w" && foundMove.piece === "p" && square[1] === "8" || foundMove.color === "b" && foundMove.piece === "p" && square[1] === "1") {
+      //   setShowPromotionDialog(true);
+      //   return;
+      // }
+
+      // is normal move
+      const isMoveValid = onDrop(moveFrom as Square, square, piece);
+      if (!isMoveValid) {
+        const hasMoveOptions = getMoveOptions(square);
+        if (hasMoveOptions) setMoveFrom(square);
+        return;
+      }
+      // const gameCopy = new Chess();
+      // gameCopy.loadPgn(game.pgn());
+      // const move = gameCopy.move({
+      //   from: moveFrom,
+      //   to: square,
+      //   promotion: "q"
+      // });
+
+      // if invalid, setMoveFrom and getMoveOptions
+      // if (move === null) {
+      //   const hasMoveOptions = getMoveOptions(square);
+      //   if (hasMoveOptions) setMoveFrom(square);
+      //   return;
+      // }
+      // updateGame(gameCopy); // game updated in onDrop
+      setMoveFrom("");
+      setMoveTo(null);
+      setOptionSquares({});
+      return;
+    }
+  }
+
   useInterval(async () => {
     // console.log("Health check websocket status");
     if (isInactive) {
@@ -495,6 +822,26 @@ export default function Game() {
   useEffect(() => {
     console.log("user changed isInactive:", isInactive);
   }, [isInactive]);
+
+  let topAddress = player2Address;
+  if (address === player2Address) {
+    topAddress = player1Address;
+  }
+  const bottomAddress = topAddress === player1Address ? player2Address : player1Address;
+  let playerOnTheClock: `0x${string}` | undefined;
+  if (game?.isGameOver() === false) {
+    playerOnTheClock = (game?.turn() === 'w' ? player1Address : player2Address) as `0x${string}`;
+  }
+
+  let latestSignedMessage = latestPlayer1Message;
+  let latestSignedPlayer = player1Address;
+  let latestSignedSignature = latestPlayer1Signature;
+  // ignore undefined case for now
+  if (latestPlayer1Message && latestPlayer2Message && latestPlayer2Message?.length > latestPlayer1Message?.length) {
+    latestSignedMessage = latestPlayer2Message;
+    latestSignedPlayer = player2Address;
+    latestSignedSignature = latestPlayer2Signature;
+  }
 
   return (
     <>
@@ -560,20 +907,35 @@ export default function Game() {
         <div ref={chessboardRef} className={`w-full p-2 md:w-1/2 md:p-0 border-box border-2 ${inCheck ? 'border-red-500' : ' border-transparent'}`}>
           {/* If address is player1 or not player2, show player2's address on top. 
           Board orientation is white on bottom by default. */}
-          <div className="flex flex-row pb-2">
-            {(address === player1Address || address !== player2Address) && <span><DisplayAddress address={player2Address as `0x${string}`} /></span>}
-            {address === player2Address && <span><DisplayAddress address={player1Address as `0x${string}`} /></span>}
+          <div className="flex flex-row pb-2 items-center justify-between">
+            <span><DisplayAddress address={topAddress as `0x${string}`} emphasize={playerOnTheClock === topAddress} /></span>
+            {playerOnTheClock === topAddress && <OnTheClock />}
           </div>
           {game &&
-            <Chessboard position={game.fen()} onPieceDrop={onDrop}
+            <Chessboard
+              position={game.fen()}
+              onPieceDrop={onDrop}
+              onSquareClick={onSquareClick}
+              // onPieceDrop={(sourceSquare, targetSquare, piece) => { console.log("onPieceDrop", sourceSquare, targetSquare, piece); return onDrop(sourceSquare, targetSquare, piece) }}
+              // onSquareClick={(square) => { console.log("onSquareClick", square); return onSquareClick(square) }}
+              // onPieceDragBegin={() => console.log("onPieceDragBegin")}
+              // onPieceDragEnd={() => console.log("onPieceDragEnd")}
+              // onPieceDrop={() => { console.log("onPieceDrop"); return false }}
+              // onPieceClick={() => console.log("onPieceClick")}
+              // onSquareClick={() => console.log("onSquareClick")}
               boardOrientation={boardOrientation}
-              arePiecesDraggable={address === player1Address || address === player2Address} />
+              arePiecesDraggable={address === player1Address || address === player2Address}
+              customSquareStyles={{
+                // ...moveSquares,
+                ...optionSquares,
+                // ...rightClickedSquares
+              }} />
           }
           {/* If address is player1 or not player2, show player1's address on bottom. 
           Board orientation is white on bottom by default. */}
-          <div className="flex flex-row pt-2">
-            {(address === player1Address || address !== player2Address) && <span><DisplayAddress address={player1Address as `0x${string}`} /></span>}
-            {address === player2Address && <span><DisplayAddress address={player2Address as `0x${string}`} /></span>}
+          <div className="flex flex-row pt-2 items-center justify-between">
+            <span><DisplayAddress address={bottomAddress as `0x${string}`} emphasize={playerOnTheClock === bottomAddress} /></span>
+            {playerOnTheClock === bottomAddress && <OnTheClock />}
           </div>
         </div>
 
@@ -581,11 +943,10 @@ export default function Game() {
         <div className="w-full md:w-1/2 border-gray-200 flex flex-col gap-2 p-2 break-words">
           {game && <p>{game.isGameOver() === true && `Game Over! ${game.turn() === 'w' ? 'Black Wins!' : 'White Wins!'}`}</p>}
           {game &&
-            <p>{game.isGameOver() === false
-              && (game.turn() === 'b' ? 'Black\'s Turn.' : 'White\'s Turn.')} {game.isCheck() ? "Check!" : ""}</p>}
-          {game && <p>Moves made: {game.history().length}</p>}
+            <p>{game.isGameOver() === false && game.isCheck() ? "Check!" : ""}</p>}
+          {game && !game.isGameOver() && <p>Move #{game.history().length + 1}</p>}
           <h3 className="pt-6 text-h3">Verifiable game state</h3>
-          <div className="flex flex-row gap-2 items-center">
+          < div className="flex flex-row gap-2 items-center">
             <span className="text-sm">Download</span>
             <button
               type="button"
@@ -631,6 +992,12 @@ export default function Game() {
               {latestPlayer2Signature && <span>Latest Player 2 Signature: {latestPlayer2Signature}</span>}
               <br />
               {latestPlayer2Message && <span>Latest Player 2 PGN Message: {latestPlayer2Message}</span>}
+              <br />
+              {<span>Contract Game ID: {contractGameId}</span>}
+              <br />
+              {<span>Contract Game Address: {contracts.gamesContract[chainId as SupportedChainId].address}</span>}
+              <br />
+              {<span>Contract NFT address: {contracts.nftContract[chainId as SupportedChainId].address}</span>}
             </p>
           </details>
 
@@ -655,6 +1022,19 @@ export default function Game() {
           <details>
             <summary className="text-sm">Logs</summary>
             <div className="flex flex-col gap-2">
+              {isNFTMinted && <p>NFT Minted! Token ID: {nftTokenId}</p>}
+              {nftMetadata && <img src={`https://ipfs.io/ipfs/${nftMetadata?.image.split("//")[1]}`} alt="NFT" />}
+              {isNFTReadyToMint && !isNFTMinted && <button type="button" onClick={() => {
+                promptUserToMintNFT();
+              }}>Mint NFT</button>}
+              {/* hide sync game button if contract game result != 0 or if a winner is already declared */}
+              <SyncGameBtn game={game} contractGameId={contractGameId} message={latestSignedMessage} signer={latestSignedPlayer} signature={latestSignedSignature} />
+              {<p>NFT URI Data: {JSON.stringify(nftUriSetData)}</p>}
+              {<p>NFT URI pending: {JSON.stringify(isPendingNftUriSet)}</p>}
+              {<p>NFT URI error: {JSON.stringify(errorNftUriSet)}</p>}
+              {<p>Game to Minted Token ID Data: {stringify(gameToMintedTokenIdData)}</p>}
+              {<p>Game to Minted Token ID pending: {JSON.stringify(isPendingGameToMintedTokenId)}</p>}
+              {<p>Game to Minted Token ID error: {JSON.stringify(errorGameToMintedTokenId)}</p>}
               {logs.map((log, index) => <p key={index}>{log}</p>)}
             </div>
           </details>
@@ -666,15 +1046,7 @@ export default function Game() {
           </details>
         </div>
       </div >
-      {
-        address === "0x7D20fd2BD3D13B03571A36568cfCc2A4EB3c749e" && <div>
-          <button type="button" onClick={() => {
-            wsRef.current?.send(
-              JSON.stringify({ type: "reset-game", data: {} }),
-            )
-          }}>Reset Game</button>
-        </div>
-      }
+      <Toast />
     </>
   );
 }

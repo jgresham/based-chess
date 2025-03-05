@@ -51,8 +51,8 @@ export const EmojiAvatar = ({ address, ensImage, size }: { address: string, ensI
           height: size,
           width: size,
         }}
+        className='bg-gray-200 dark:bg-gray-800'
       >
-        <span>Loading...</span>
       </div>
     )
   ) : (

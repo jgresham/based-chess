@@ -10,6 +10,8 @@ export default function WalletHeaderAndFooter() {
     <main className="flex flex-col items-center h-full w-[98%] justify-self-center">
       <div className='flex flex-row items-center justify-between w-full p-2'>
         <div className='font-bold'>Based Chess</div>
+        {import.meta.env.VITE_WORKER_DOMAIN?.includes("localhost") && <div className='text-xs text-green-500'>DEV</div>}
+        {import.meta.env.VITE_WORKER_DOMAIN?.includes("staging") && <div className='text-xs text-yellow-500'>STAGING</div>}
         <div><ConnectButton /></div>
       </div>
       <Outlet />

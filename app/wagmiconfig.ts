@@ -1,11 +1,11 @@
 import { http, createConfig } from 'wagmi'
-import { base, mainnet } from 'wagmi/chains'
+import { base, baseSepolia, mainnet } from 'wagmi/chains'
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 
 export const config = getDefaultConfig({
   appName: 'Based Chess',
   projectId: 'fc0abe40a98d684825700df3507dc133',
-  chains: [mainnet, base],
+  chains: [mainnet, base, baseSepolia],
   // chains: [base],
   transports: {
     [base.id]: http('https://base-mainnet.g.alchemy.com/v2/xFjQGD9_D32OdWAY-iyViQ7xHYHIUF-i'),
