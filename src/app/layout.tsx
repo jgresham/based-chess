@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { ConnectButton, darkTheme, RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import "./globals.css";
-import FrameProvider from "../lib/frameProvider";
-import sdk from "@farcaster/frame-sdk";
-import { useState } from "react";
-import Providers from "./providers";
+import Providers from "../components/providers/providers";
 import '../../node_modules/@rainbow-me/rainbowkit/dist/index.css';
 
 const geistSans = localFont({
@@ -21,9 +18,24 @@ const geistMono = localFont({
 
 const appUrl = process.env.NEXT_PUBLIC_URL;
 
+// // todo: ensure all these are set from pre-nextjs
+// {/* <meta property="og:title" content="Based Chess" />
+// <meta property="og:url" content="https://basedchess.xyz" />
+// <meta property="og:image" content="https://basedchess.xyz/based-chess-logo.jpg" />
+
+// <meta name="twitter:card" content="summary_large_image" />
+// <meta property="twitter:domain" content="basedchess.xyz" />
+// <meta property="twitter:url" content="https://basedchess.xyz" />
+// <meta name="twitter:title" content="Based Chess" />
+// <meta name="twitter:description" content="Welcome to Based Chess" />
+// <meta name="twitter:image" content="https://basedchess.xyz/based-chess-logo.jpg" /> */}
+
 export const metadata: Metadata = {
   title: "Based Chess",
   description: "Welcome to Based Chess",
+  icons: {
+    icon: `${appUrl}/based-chess-logo-3-2-2.png`,
+  },
   other: {
     "fc:frame": JSON.stringify({
       version: "next",

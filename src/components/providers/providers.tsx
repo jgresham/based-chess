@@ -1,5 +1,5 @@
 "use client";
-import FrameProvider from "../lib/frameProvider";
+import FrameProvider from "./wagmiWithFrameProvider";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import sdk, { type Context } from "@farcaster/frame-sdk";
 import { useState, useEffect } from "react";

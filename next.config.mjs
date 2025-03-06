@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-	// todo: remove after initial testing
-	eslint: {
-		ignoreDuringBuilds: true,
-	},
-	typescript: {
-		ignoreBuildErrors: true,
-	},
+	// use only for quick build testing before optimizing eslint & type fixes
+	// eslint: {
+	// 	ignoreDuringBuilds: true,
+	// },
+	// typescript: {
+	// 	ignoreBuildErrors: true,
+	// },
 };
 
 export default nextConfig;

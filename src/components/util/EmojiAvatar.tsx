@@ -2,7 +2,7 @@
 //  src https://github.com/rainbow-me/rainbowkit/blob/main/packages/rainbowkit/src/components/Avatar/EmojiAvatar.tsx
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { emojiAvatarForAddress } from './emojiAvatarForAddress';
+import { emojiAvatarForAddress } from '../../lib/emojiAvatarForAddress';
 
 export const EmojiAvatar = ({ address, ensImage, size }: { address: string, ensImage: string, size: number }) => {
   const [loaded, setLoaded] = useState(false);

@@ -4,12 +4,12 @@ import { useAccount, useEnsAddress, useEnsName } from 'wagmi'
 import { QueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation';
-import LoadingIcon from './loadingIcon';
-import DisplayAddress from './DisplayAddress';
+import LoadingIcon from '../components/loadingIcon';
+import DisplayAddress from '../components/util/DisplayAddress';
 import { sdk, type Context } from "@farcaster/frame-sdk"
 import { normalize } from 'viem/ens';
 import { isAddress } from 'viem';
-import { mainnetConfig } from './wagmiconfig';
+import { mainnetConfig } from '../lib/wagmiconfig';
 
 // export function metadata() {
 //   return [
