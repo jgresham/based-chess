@@ -17,7 +17,7 @@ import { lazy, useState } from 'react';
 import { useEffect } from 'react';
 import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 
-const FrameProvider = lazy(() => import('./lib/frameProvider'));
+const FrameProvider = lazy(() => import('../lib/frameProvider'));
 
 Sentry.init({
   dsn: "https://d3bfdc63e77374adb6a25040a7482472@o4508756937670656.ingest.us.sentry.io/4508756939767808",
@@ -127,7 +127,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       error.status === 404
         ? "The requested page could not be found."
         : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
+  } else if (process.env.DEV && error && error instanceof Error) {
     details = error.message;
     stack = error.stack;
   }

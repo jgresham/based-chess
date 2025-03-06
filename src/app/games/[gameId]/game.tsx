@@ -1,28 +1,26 @@
+"use client";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess, type Move, type Piece, type Square } from "chess.js";
-import type { WsMessage } from "../../../../chess-worker/src/index";
+import type { WsMessage } from "../../../../../chess-worker/src/index";
 import { signMessage, verifyMessage, waitForTransactionReceipt, watchContractEvent, writeContract } from '@wagmi/core'
 import { useAccount, useChainId, useConnections, useFeeData, useReadContract, useSimulateContract, useWriteContract } from 'wagmi'
-import { frameWagmiConfig } from '../../lib/wagmiconfig'
-import { Link, useParams } from "react-router";
+import { frameWagmiConfig } from '../../../lib/wagmiconfig'
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import type { BoardOrientation } from "react-chessboard/dist/chessboard/types";
 import { useInterval } from "../../useInterval";
 import useInactive from "../../useInactive";
 import DisplayAddress from "../../DisplayAddress";
-import { copyPngToClipboard } from "../../util/downloadPng";
+import { copyPngToClipboard } from "../../../util/downloadPng";
 import { sdk, type Context } from "@farcaster/frame-sdk"
-import AudioPlayer, { type AudioPlayerHandle } from "../../util/AudioPlayer";
-import dropChessPieceSound from "../../sounds/drop_piece.mp3";
-import loseGameSound from "../../sounds/lose_game.mp3";
-import winGameSound from "../../sounds/win_game.mp3";
-import drawGameSound from "../../sounds/draw_game.mp3";
 import OnTheClock from "../../OnTheClock";
 import { SyncGameBtn } from "./SyncGameBtn";
-import { useToast } from "../../util/useToast";
-import type { SupportedChainId } from "../../util/contracts";
-import { contracts } from "../../util/contracts";
-import { stringify } from "../../util/stringifyContractData";
+import { useToast } from "../../../util/useToast";
+import type { SupportedChainId } from "../../../util/contracts";
+import { contracts } from "../../../util/contracts";
+import { stringify } from "../../../util/stringifyContractData";
 
 export function meta({ params }: { params: { gameId: string } }) {
   return [
@@ -80,10 +78,10 @@ export default function Game() {
   const [logs, setLogs] = useState<string[]>([navigator.userAgent]);
   const [inCheck, setInCheck] = useState(false);
   const [connections] = useConnections();
-  const [audioPlayerDropChessPiece] = useState(new Audio(dropChessPieceSound));
-  const [audioPlayerLoseGame] = useState(new Audio(loseGameSound));
-  const [audioPlayerWinGame] = useState(new Audio(winGameSound));
-  const [audioPlayerDrawGame] = useState(new Audio(drawGameSound));
+  const [audioPlayerDropChessPiece, setAudioPlayerDropChessPiece] = useState<HTMLAudioElement | undefined>();
+  const [audioPlayerLoseGame, setAudioPlayerLoseGame] = useState<HTMLAudioElement | undefined>();
+  const [audioPlayerWinGame, setAudioPlayerWinGame] = useState<HTMLAudioElement | undefined>();
+  const [audioPlayerDrawGame, setAudioPlayerDrawGame] = useState<HTMLAudioElement | undefined>();
 
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<Context.FrameContext>();
@@ -122,9 +120,17 @@ export default function Game() {
   });
 
   useEffect(() => {
+    setAudioPlayerDropChessPiece(new Audio("/sounds/drop_piece.mp3"));
+    setAudioPlayerLoseGame(new Audio("/sounds/lose_game.mp3"));
+    setAudioPlayerWinGame(new Audio("/sounds/win_game.mp3"));
+    setAudioPlayerDrawGame(new Audio("/sounds/draw_game.mp3"));
+  }, []);
+
+
+  useEffect(() => {
     console.log("Tanstack: isNFTMinted", isNFTMinted);
     console.log("Tanstack: nftUriSetData", nftUriSetData);
-    if (isNFTMinted && nftUriSetData) {
+    if (isNFTMinted && nftUriSetData && typeof nftUriSetData === "string") {
       fetch(`https://ipfs.io/ipfs/${nftUriSetData.split("//")[1]}`).then(res => res.json()).then(data => {
         console.log("Tanstack: nftUriMetadata", data);
         setNftMetadata(data);
@@ -404,7 +410,7 @@ export default function Game() {
   }
 
   const playDropChessPieceSound = async () => {
-    audioPlayerDropChessPiece.play();
+    audioPlayerDropChessPiece?.play();
   }
 
   const onMoveRecieved = (messageData: { data: any, type: string }) => {
@@ -436,7 +442,7 @@ export default function Game() {
 
   const startWebSocket = () => {
     const wsProtocol = window.location.protocol === "https:" ? "wss" : "wss";
-    const domain = import.meta.env.VITE_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
+    const domain = process.env.NEXT_PUBLIC_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
     // const stagingDomain = "chess-worker-staging.johnsgresham.workers.dev";
     // const domain = "localhost:8787";
     const ws = new WebSocket(
@@ -519,10 +525,10 @@ export default function Game() {
     return () => {
       wsRef.current?.close();
       window.removeEventListener('beforeunload', closeWebsocket);
-      audioPlayerDrawGame.pause();
-      audioPlayerLoseGame.pause();
-      audioPlayerWinGame.pause();
-      audioPlayerDropChessPiece.pause();
+      audioPlayerDrawGame?.pause();
+      audioPlayerLoseGame?.pause();
+      audioPlayerWinGame?.pause();
+      audioPlayerDropChessPiece?.pause();
     }
     // biome-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -847,7 +853,7 @@ export default function Game() {
     <>
       {/* icons showing the number of live views and a share url button */}
       <div className="w-full flex flex-row justify-end items-center pr-2">
-        <Link className="flex-1 pl-2" to={"/"}>{"< Games"}</Link>
+        <Link className="flex-1 pl-2" href={"/"}>{"< Games"}</Link>
         <div className="flex flex-row items-center gap-1 mr-2 group relative">
           {game && <span>{liveViewers}</span>}
           {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}

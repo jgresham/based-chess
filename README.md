@@ -6,84 +6,22 @@ Customizable. Composable. Forkable. Verifiable.
 
 ## Developer details
 
-### Welcome to React Router!
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-A modern, production-ready template for building full-stack React applications using React Router.
+#### Getting Started
 
-#### Features
-
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
-
-##### Getting Started
-
-###### Installation
-
-Install the dependencies:
-
-```bash
-npm install
-```
-
-###### Development
-
-Start the development server with HMR:
+First, run the development server:
 
 ```bash
 npm run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-##### Building for Production
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-Create a production build:
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-```bash
-npm run build
-```
-
-##### Deployment
-
-Deployment is done using the Wrangler CLI.
-
-To deploy directly to production:
-
-```sh
-npm run deploy
-```
-
-or
-
-```sh
-npm run build
-npx wrangler deploy
-```
-
-To deploy a preview URL:
-
-```sh
-npx wrangler versions upload
-```
-
-You can then promote a version to production after verification or roll it out progressively.
-
-```sh
-npx wrangler versions deploy
-```
-
-##### Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
 
 ## Credits
 

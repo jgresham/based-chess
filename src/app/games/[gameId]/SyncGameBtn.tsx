@@ -1,7 +1,7 @@
 import type { Chess } from "chess.js";
 import { useChainId, useSimulateContract, useWriteContract } from "wagmi";
-import { contracts, type SupportedChainId } from "../../util/contracts";
-import { frameWagmiConfig } from "../../lib/wagmiconfig";
+import { contracts, type SupportedChainId } from "../../../util/contracts";
+import { frameWagmiConfig } from "../../../lib/wagmiconfig";
 
 export function SyncGameBtn({ game, contractGameId, message, signer, signature }: { game?: Chess, contractGameId?: number, message?: string, signer?: `0x${string}`, signature?: `0x${string}` }) {
   const { writeContract, isPending, error, data: txHash } = useWriteContract();
