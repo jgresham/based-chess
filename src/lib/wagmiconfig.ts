@@ -57,29 +57,22 @@ export const frameWagmiConfig = createConfig({
   ...walletConnectors],
 });
 
-// export const frameWagmiConfig = getDefaultConfig({
+// used for ens lookups. Ex. A provider on Base doesnt work for ens lookups.
+export const mainnetConfig = createConfig({
+  chains: [mainnet],
+  transports: {
+    [mainnet.id]: http('https://eth-mainnet.g.alchemy.com/v2/xFjQGD9_D32OdWAY-iyViQ7xHYHIUF-i'),
+  },
+})
+
+// export const config = getDefaultConfig({
 //   appName: 'Based Chess',
 //   projectId: 'fc0abe40a98d684825700df3507dc133',
-//   // description: 'Own your wins',
-//   // url: 'https://basedchess.xyz',
-//   // icons: ['https://basedchess.xyz/based-chess-logo.jpg'],
+//   chains: [mainnet, base, baseSepolia],
 //   // chains: [base],
 //   transports: {
 //     [base.id]: http('https://base-mainnet.g.alchemy.com/v2/xFjQGD9_D32OdWAY-iyViQ7xHYHIUF-i'),
-//     [baseSepolia.id]: http('https://base-sepolia.g.alchemy.com/v2/xFjQGD9_D32OdWAY-iyViQ7xHYHIUF-i'),
+//     [mainnet.id]: http('https://eth-mainnet.g.alchemy.com/v2/xFjQGD9_D32OdWAY-iyViQ7xHYHIUF-i'),
 //   },
-//   chains: chains as [Chain, ...Chain[]],
-//   connectors: [
-//     farcasterFrame(),
-//     walletConnect({
-//       projectId: 'fc0abe40a98d684825700df3507dc133',
-//       metadata: {
-//         name: 'Based Chess',
-//         description: 'Own your wins',
-//         url: 'https://basedchess.xyz',
-//         icons: ['https://basedchess.xyz/based-chess-logo.jpg'],
-//       },
-//     }),
-//     ...walletConnectors
-//   ],
+//   // chains: [base],
 // });

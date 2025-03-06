@@ -10,17 +10,17 @@ import { frameWagmiConfig } from '../../../lib/wagmiconfig'
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import type { BoardOrientation } from "react-chessboard/dist/chessboard/types";
-import { useInterval } from "../../useInterval";
-import useInactive from "../../useInactive";
-import DisplayAddress from "../../DisplayAddress";
-import { copyPngToClipboard } from "../../../util/downloadPng";
+import { useInterval } from "../../../lib/useInterval";
+import useInactive from "../../../components/hooks/useInactive";
+import DisplayAddress from "../../../components/util/DisplayAddress";
+import { copyPngToClipboard } from "../../../lib/downloadPng";
 import { sdk, type Context } from "@farcaster/frame-sdk"
-import OnTheClock from "../../OnTheClock";
+import OnTheClock from "../../../components/OnTheClock";
 import { SyncGameBtn } from "./SyncGameBtn";
-import { useToast } from "../../../util/useToast";
-import type { SupportedChainId } from "../../../util/contracts";
-import { contracts } from "../../../util/contracts";
-import { stringify } from "../../../util/stringifyContractData";
+import { useToast } from "../../../components/hooks/useToast";
+import type { SupportedChainId } from "../../../lib/contracts";
+import { contracts } from "../../../lib/contracts";
+import { stringify } from "../../../lib/stringifyContractData";
 
 export function meta({ params }: { params: { gameId: string } }) {
   return [

@@ -1,8 +1,8 @@
 import { useEnsName, useEnsAvatar } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
-import { mainnetConfig } from './wagmiconfig';
+import { mainnetConfig } from '../../lib/wagmiconfig';
 import { normalize } from 'viem/ens';
-import { EmojiAvatar } from '../util/EmojiAvatar';
+import { EmojiAvatar } from './EmojiAvatar';
 
 // Displays an ethereum address in a truncated format by showing the first 6 and last 4 characters
 const truncateAddress = (address: `0x${string}` | undefined) => {

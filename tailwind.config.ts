@@ -1,28 +1,3 @@
-// import type { Config } from "tailwindcss";
-
-// export default {
-//   content: ["./app/**/{**,.client,.server}/**/*.{js,jsx,ts,tsx}"],
-//   theme: {
-//     extend: {
-// fontFamily: {
-//   sans: [
-//     '"Inter"',
-//     "ui-sans-serif",
-//     "system-ui",
-//     "sans-serif",
-//     '"Apple Color Emoji"',
-//     '"Segoe UI Emoji"',
-//     '"Segoe UI Symbol"',
-//     '"Noto Color Emoji"',
-//   ],
-// },
-// animation: {
-//   'spin-slow': 'spin 3s linear infinite', // Define a custom animation with 15s duration
-// },
-//     },
-//   },
-//   plugins: [],
-// } satisfies Config;
 import type { Config } from "tailwindcss";
 
 const config: Config = {
@@ -37,6 +12,13 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      // from framesv2-demo
+      // borderRadius: {
+      //   lg: 'var(--radius)',
+      //   md: 'calc(var(--radius) - 2px)',
+      //   sm: 'calc(var(--radius) - 4px)'
+      // },
+      // not in framesv2-demo
       fontFamily: {
         sans: [
           '"Inter"',
