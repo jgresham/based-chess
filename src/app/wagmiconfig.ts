@@ -12,7 +12,6 @@ export const config = getDefaultConfig({
     [mainnet.id]: http('https://eth-mainnet.g.alchemy.com/v2/xFjQGD9_D32OdWAY-iyViQ7xHYHIUF-i'),
   },
   // chains: [base],
-  ssr: false, // If your dApp uses server side rendering (SSR)
 });
 
 // used for ens lookups. Ex. A provider on Base doesnt work for ens lookups.
@@ -21,5 +20,4 @@ export const mainnetConfig = createConfig({
   transports: {
     [mainnet.id]: http('https://eth-mainnet.g.alchemy.com/v2/xFjQGD9_D32OdWAY-iyViQ7xHYHIUF-i'),
   },
-  ssr: false, // If your dApp uses server side rendering (SSR)
 })

@@ -1,9 +1,16 @@
 import { useEnsName, useEnsAvatar } from 'wagmi'
-import { truncateAddress } from './routes/home'
 import { mainnet } from 'wagmi/chains'
 import { mainnetConfig } from './wagmiconfig';
 import { normalize } from 'viem/ens';
-import { EmojiAvatar } from './util/EmojiAvatar';
+import { EmojiAvatar } from '../util/EmojiAvatar';
+
+// Displays an ethereum address in a truncated format by showing the first 6 and last 4 characters
+const truncateAddress = (address: `0x${string}` | undefined) => {
+  if (!address) {
+    return "";
+  }
+  return `${address.substring(0, 6)}...${address.substring(address.length - 6)}`;
+}
 
 export default function DisplayAddress({ address, showAddress = false, emphasize = false }: { address: `0x${string}` | undefined, showAddress?: boolean, emphasize?: boolean }) {
   const { data: ensName } = useEnsName({ config: mainnetConfig, address, chainId: mainnet.id, })
