@@ -30,7 +30,7 @@
     "chess.js": "^1.0.0",
     "html2canvas": "^1.4.1",
     "isbot": "^5.1.17",
-    "next": "^15.2.1",
+    "next": "15.1.7",
     "react": "^19.0.0",
     "react-chessboard": "^4.7.2",
     "react-dom": "^19.0.0",
@@ -51,6 +51,6 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
     "typescript": "^5.7.2",
-    "wrangler": "^3.113.0"
+    "wrangler": "^3.114.0"
   }
 }

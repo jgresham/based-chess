@@ -19,9 +19,27 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
+const appUrl = process.env.NEXT_PUBLIC_URL;
+
 export const metadata: Metadata = {
   title: "Based Chess",
   description: "Welcome to Based Chess",
+  other: {
+    "fc:frame": JSON.stringify({
+      version: "next",
+      imageUrl: `${appUrl}/based-chess-logo-3-2-2.png`,
+      button: {
+        title: "Play Chess",
+        action: {
+          type: "launch_frame",
+          name: "Based Chess",
+          url: `${appUrl}/`,
+          splashImageUrl: `${appUrl}/based-chess-logo-200.jpg`,
+          splashBackgroundColor: "#ffffff"
+        }
+      }
+    })
+  }
 };
 
 export default function RootLayout({
