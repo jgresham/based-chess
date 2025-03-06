@@ -1,8 +1,7 @@
 "use client";
 
-import { useAccount, useEnsAddress, useEnsName } from 'wagmi'
-import { QueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from "react";
+import { useAccount, useEnsAddress } from 'wagmi'
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from 'next/navigation';
 import LoadingIcon from '../components/loadingIcon';
 import DisplayAddress from '../components/util/DisplayAddress';
@@ -65,7 +64,6 @@ export default function Page() {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<Context.FrameContext>();
 
-  const { data: player2EnsName } = useEnsName({ config: mainnetConfig, address: player2AddressOrEnsInput as `0x${string}` });
   const [normalizedEnsName, setNormalizedEnsName] = useState<string | undefined>(undefined);
   const { data: player2AddressFromEns } = useEnsAddress({ config: mainnetConfig, name: normalizedEnsName || "" });
 
@@ -73,6 +71,7 @@ export default function Page() {
     try {
       setNormalizedEnsName(normalize(player2AddressOrEnsInput));
     } catch (error) {
+      console.error("Error normalizing ens name:", error);
       setNormalizedEnsName(undefined);
     }
   }, [player2AddressOrEnsInput]);
@@ -94,6 +93,29 @@ export default function Page() {
     }
   }, [isSDKLoaded]);
 
+  const getUserGames = useCallback(async () => {
+    setErrorCreateGame("");
+    const httpsProtocol = window.location.protocol === "https:" ? "https" : "http";
+    const domain = process.env.NEXT_PUBLIC_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
+    // const domain = "localhost:8787";
+    const url = `${httpsProtocol}://${domain}/user/games?address=${address}`;
+    const response = await fetch(url, {
+      method: "GET",
+    });
+    console.log("response:", response);
+    const data: {
+      games: GameData[]
+    } = await response.json();
+    console.log("data:", data);
+    const games = data.games;
+    if (!games) {
+      console.error("No games in response");
+      setErrorCreateGame("Unable to get user games");
+      setGames([]);
+      return;
+    }
+    setGames(games);
+  }, [address]);
 
   useEffect(() => {
     if (address) {
@@ -101,7 +123,7 @@ export default function Page() {
     } else {
       setGames([]);
     }
-  }, [address]);
+  }, [address, getUserGames]);
 
   const onClickCreateGame = async () => {
     setErrorCreateGame("");
@@ -145,39 +167,6 @@ export default function Page() {
       setErrorCreateGame("Unable to create game");
       setLoadingCreateGame(false);
     }
-  }
-
-  const getUserGames = async () => {
-    setErrorCreateGame("");
-    const httpsProtocol = window.location.protocol === "https:" ? "https" : "http";
-    const domain = process.env.NEXT_PUBLIC_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
-    // const domain = "localhost:8787";
-    const url = `${httpsProtocol}://${domain}/user/games?address=${address}`;
-    const response = await fetch(url, {
-      method: "GET",
-    });
-    console.log("response:", response);
-    const data: {
-      games: GameData[]
-    } = await response.json();
-    console.log("data:", data);
-    const games = data.games;
-    if (!games) {
-      console.error("No games in response");
-      setErrorCreateGame("Unable to get user games");
-      setGames([]);
-      return;
-    }
-    setGames(games);
-  }
-
-  // if the user enters an ens name, display the address derived from the ens name
-  // if the user enters an address, display the ens name if it exists
-  let player2AddressLabel = "";
-  if (player2AddressOrEnsInput.includes("0x")) {
-    player2AddressLabel = player2EnsName ?? "";
-  } else if (player2AddressOrEnsInput.includes(".eth")) {
-    player2AddressLabel = player2AddressFromEns ?? "";
   }
 
   return (
