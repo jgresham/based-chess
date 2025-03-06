@@ -8,7 +8,7 @@ import { darkTheme } from "@rainbow-me/rainbowkit";
 export default function Providers({ children }: { children: React.ReactNode }) {
 
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  const [context, setContext] = useState<Context.FrameContext>();
+  const [_context, setContext] = useState<Context.FrameContext>();
 
   useEffect(() => {
     const load = async () => {

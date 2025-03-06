@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { Chessboard } from "react-chessboard";
-import { Chess, type Move, type Piece, type Square } from "chess.js";
-import type { WsMessage } from "../../../../../chess-worker/src/index";
+import { Chess, type Move, type Square } from "chess.js";
 import { signMessage, verifyMessage, waitForTransactionReceipt, watchContractEvent, writeContract } from '@wagmi/core'
-import { useAccount, useChainId, useConnections, useFeeData, useReadContract, useSimulateContract, useWriteContract } from 'wagmi'
+import { useAccount, useChainId, useConnections, useReadContract } from 'wagmi'
 import { frameWagmiConfig } from '../../../lib/wagmiconfig'
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -13,7 +13,7 @@ import type { BoardOrientation } from "react-chessboard/dist/chessboard/types";
 import { useInterval } from "../../../lib/useInterval";
 import useInactive from "../../../components/hooks/useInactive";
 import DisplayAddress from "../../../components/util/DisplayAddress";
-import { copyPngToClipboard } from "../../../lib/downloadPng";
+// import { copyPngToClipboard } from "../../../lib/downloadPng";
 import { sdk, type Context } from "@farcaster/frame-sdk"
 import OnTheClock from "../../../components/OnTheClock";
 import { SyncGameBtn } from "./SyncGameBtn";
@@ -21,6 +21,12 @@ import { useToast } from "../../../components/hooks/useToast";
 import type { SupportedChainId } from "../../../lib/contracts";
 import { contracts } from "../../../lib/contracts";
 import { stringify } from "../../../lib/stringifyContractData";
+
+export type WsMessage = {
+  type: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any
+}
 
 export function meta({ params }: { params: { gameId: string } }) {
   return [
@@ -57,6 +63,13 @@ export function meta({ params }: { params: { gameId: string } }) {
   ]
 }
 
+type NFTMetadata = {
+  name: string;
+  description: string;
+  image: string;
+  properties: Record<string, string | number | boolean>;
+}
+
 export default function Game() {
   const wsRef = useRef<WebSocket | null>(null);
   const chessboardRef = useRef<HTMLDivElement>(null);
@@ -89,7 +102,7 @@ export default function Game() {
   // clicking squares functionality
   const [moveFrom, setMoveFrom] = useState("");
   const [moveTo, setMoveTo] = useState<Square | null>(null);
-  const [optionSquares, setOptionSquares] = useState({});
+  const [optionSquares, setOptionSquares] = useState<Partial<Record<Square, { background?: string, borderRadius?: string }>>>({});
 
   const { showToast, Toast } = useToast();
   const chainId = useChainId();
@@ -98,7 +111,7 @@ export default function Game() {
   const [isNFTMinted, setIsNFTMinted] = useState(false);
   const [isNFTReadyToMint, setIsNFTReadyToMint] = useState(false);
   const [nftTokenId, setNftTokenId] = useState<string | undefined>();
-  const [nftMetadata, setNftMetadata] = useState<any | undefined>();
+  const [nftMetadata, setNftMetadata] = useState<NFTMetadata | undefined>();
   // const { writeContract: writeContractContractGame, isPending: isPendingContractGame, error: errorContractGame, data: txHashContractGame } = useWriteContract();
   const { data: contractGameData, isPending: isPendingContractGame, error: errorContractGame } = useReadContract({
     address: contracts.gamesContract[chainId as SupportedChainId].address as `0x${string}`,
@@ -133,7 +146,7 @@ export default function Game() {
     if (isNFTMinted && nftUriSetData && typeof nftUriSetData === "string") {
       fetch(`https://ipfs.io/ipfs/${nftUriSetData.split("//")[1]}`).then(res => res.json()).then(data => {
         console.log("Tanstack: nftUriMetadata", data);
-        setNftMetadata(data);
+        setNftMetadata(data as NFTMetadata);
       })
     }
   }, [isNFTMinted, nftUriSetData]);
@@ -152,7 +165,7 @@ export default function Game() {
     console.log("Tanstack: errorContractGame", errorContractGame);
     console.log("Tanstack: contractGameData", contractGameData);
     if (Array.isArray(contractGameData)) {
-      const [gameIdBigInt, creator, player1, player2, result, winnerIfNotDraw, updatesSignatures] = contractGameData as [bigint, `0x${string}`, `0x${string}`, `0x${string}`, number, `0x${string}`, `0x${string}`];
+      const [_gameIdBigInt, _creator, _player1, _player2, result, winnerIfNotDraw, _updatesSignatures] = contractGameData as [bigint, `0x${string}`, `0x${string}`, `0x${string}`, number, `0x${string}`, `0x${string}`];
       if (result === 1 && winnerIfNotDraw !== undefined && winnerIfNotDraw !== "0x0000000000000000000000000000000000000000") {
         setWinner(winnerIfNotDraw);
       }
@@ -226,6 +239,7 @@ export default function Game() {
       console.log("page visibility changed and is not visible")
     }
     // return () => wsRef.current?.close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isVisible]);
 
   useEffect(() => {
@@ -275,6 +289,7 @@ export default function Game() {
     // }, [game, address, player1Address, player2Address, audioPlayerDrawGame, audioPlayerLoseGame, audioPlayerWinGame]);
   }, [game, address, player1Address, player2Address]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const processContractGameOverEvent = useCallback((log: any) => {
     console.log("processContractGameOverEvent", log);
     const { gameId, result, winnerIfNotDraw, loserIfNotDraw, creator } = log.args;
@@ -324,6 +339,7 @@ export default function Game() {
     }
   }, [game, contractGameId, chainId, processContractGameOverEvent]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const processNftUriSetEvent = useCallback((log: any) => {
     console.log("processNftUriSetEvent", log);
     const { gamesContractAddress, gameId, nftUri } = log.args;
@@ -376,8 +392,9 @@ export default function Game() {
         eventName: 'NftUriSet',
         args: { gamesContractAddress: contracts.gamesContract[chainId as SupportedChainId].address as `0x${string}`, gameId: contractGameId },
         onLogs: (logs) => {
-          // biome-ignore lint/complexity/noForEach: <explanation>
-          logs.forEach((log) => processNftUriSetEvent(log));
+          for (const log of logs) {
+            processNftUriSetEvent(log);
+          }
         },
         onError: (error) => {
           console.error('Error watching events:', error);
@@ -413,7 +430,7 @@ export default function Game() {
     audioPlayerDropChessPiece?.play();
   }
 
-  const onMoveRecieved = (messageData: { data: any, type: string }) => {
+  const onMoveRecieved = (messageData: { data: Move, type: string }) => {
     // using previous state is required because accessing game within the onMessage callback
     // results in a stale copy of game at the time the callback is registered (undefined)
     setGame(prevGame => {
@@ -456,6 +473,7 @@ export default function Game() {
       ws.send(JSON.stringify(message));
     };
     ws.onmessage = async (message: MessageEvent) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const messageData: { data: any, type: string } = JSON.parse(message.data);
       console.log("ws onmessage:", messageData, game);
       switch (messageData.type) {
@@ -510,7 +528,7 @@ export default function Game() {
     console.log("closing websocket");
     wsRef.current?.close();
   }
-  // biome-ignore lint/correctness/useExhaustiveDependencies: only call on mount
+
   useEffect(() => {
     // Only close the websocket when the component unmounts
     if (wsRef.current === null
@@ -530,13 +548,12 @@ export default function Game() {
       audioPlayerWinGame?.pause();
       audioPlayerDropChessPiece?.pause();
     }
-    // biome-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const signMove = async (
     game: Chess,
     move: { from: string, to: string, promotion: string },
-    moveMove: Move
   ) => {
     if (!address) {
       console.error("no address");
@@ -626,13 +643,12 @@ export default function Game() {
    * or sends the move to the server if the user does sign it
    * @param game the game state with the move already made
    * @param move the move being made (from, to, promotion) notation
-   * @param moveMove the move being made (chess.js Move object for move metadata and alternate notations)
    */
-  async function askUserToSignMove(game: Chess, move: { from: string, to: string, promotion: string }, moveMove: Move) {
+  async function askUserToSignMove(game: Chess, move: { from: string, to: string, promotion: string }) {
     setAwaitSigningMove(true);
     try {
       // todo: top level onDrop cant be async 
-      await signMove(game, move, moveMove);
+      await signMove(game, move);
     } catch (error) {
       console.error("error signing move:", error);
       setLogs(prevLogs => [...prevLogs, `error signing move: ${error}`]);
@@ -651,8 +667,8 @@ export default function Game() {
     return true;
   }
 
-  function onDrop(sourceSquare: Square, targetSquare: Square, piece: Piece) {
-    console.log("onDrop game:", game, sourceSquare, targetSquare, piece);
+  function onDrop(sourceSquare: Square, targetSquare: Square) {
+    console.log("onDrop game:", game, sourceSquare, targetSquare);
     playDropChessPieceSound();
 
     if (!game) {
@@ -698,7 +714,7 @@ export default function Game() {
         from: sourceSquare,
         to: targetSquare,
         promotion: "q", // always promote to a queen for example simplicity
-      }, move);
+      });
       setLogs(prevLogs => [...prevLogs, "askUserToSignMove"]);
       return true;
     } catch (error) {
@@ -721,7 +737,7 @@ export default function Game() {
       setOptionSquares({});
       return false;
     }
-    const newSquares: Record<Square, { background: string, borderRadius?: string }> = {};
+    const newSquares: Partial<Record<Square, { background: string, borderRadius?: string }>> = {};
     moves.map(move => {
       newSquares[move.to] = {
         background: game.get(move.to) && game?.get(move.to)?.color !== game?.get(square)?.color ? "radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)" : "radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)",
@@ -736,7 +752,7 @@ export default function Game() {
     return true;
   }
 
-  function onSquareClick(square: Square, piece: Piece) {
+  function onSquareClick(square: Square, piece: string | undefined) {
     console.log("onSquareClick", square, piece);
     if (!game) {
       console.error("game not initialized");
@@ -755,7 +771,7 @@ export default function Game() {
     if (!moveTo) {
       // check if valid move before showing dialog
       const moves = game.moves({
-        moveFrom,
+        square: moveFrom as Square,
         verbose: true
       });
       const foundMove = moves.find(m => m.from === moveFrom && m.to === square);
@@ -778,7 +794,7 @@ export default function Game() {
       // }
 
       // is normal move
-      const isMoveValid = onDrop(moveFrom as Square, square, piece);
+      const isMoveValid = onDrop(moveFrom as Square, square);
       if (!isMoveValid) {
         const hasMoveOptions = getMoveOptions(square);
         if (hasMoveOptions) setMoveFrom(square);
@@ -920,7 +936,7 @@ export default function Game() {
           {game &&
             <Chessboard
               position={game.fen()}
-              onPieceDrop={onDrop}
+              onPieceDrop={(sourceSquare, targetSquare, _piece) => onDrop(sourceSquare, targetSquare)}
               onSquareClick={onSquareClick}
               // onPieceDrop={(sourceSquare, targetSquare, piece) => { console.log("onPieceDrop", sourceSquare, targetSquare, piece); return onDrop(sourceSquare, targetSquare, piece) }}
               // onSquareClick={(square) => { console.log("onSquareClick", square); return onSquareClick(square) }}
@@ -1007,41 +1023,24 @@ export default function Game() {
             </p>
           </details>
 
-          {/* {game && <p>Pgn: {game.pgn()}</p>}
-          {latestPlayer1Signature && <p>Latest Player 1 Signature: {latestPlayer1Signature}</p>}
-          {latestPlayer1Message && <p>Latest Player 1 Message: {latestPlayer1Message}</p>}
-          {latestPlayer2Signature && <p>Latest Player 2 Signature: {latestPlayer2Signature}</p>}
-          {latestPlayer2Message && <p>Latest Player 2 Message: {latestPlayer2Message}</p>} */}
-          {/* iwjoijweiofjiowejfoiwjeifjweiojfiowejiofjwef
-          wejfiwjef
-          wefwefwef
-          wefwefwe
-          iwjoijweiofjiowejfoiwjeifjweiojfiowejiofjwef
-          wejfiwjef
-          wefwefwef
-          wefwefwe
-          iwjoijweiofjiowejfoiwjeifjweiojfiowejiofjwef
-          wejfiwjef
-          wefwefwef
-          wefwefwe */}
           <h3 className="pt-6 text-h3">Debug Info</h3>
           <details>
             <summary className="text-sm">Logs</summary>
             <div className="flex flex-col gap-2">
               {isNFTMinted && <p>NFT Minted! Token ID: {nftTokenId}</p>}
-              {nftMetadata && <img src={`https://ipfs.io/ipfs/${nftMetadata?.image.split("//")[1]}`} alt="NFT" />}
+              {nftMetadata && <Image src={`https://ipfs.io/ipfs/${nftMetadata?.image.split("//")[1]}`} alt="NFT" />}
               {isNFTReadyToMint && !isNFTMinted && <button type="button" onClick={() => {
                 promptUserToMintNFT();
               }}>Mint NFT</button>}
               {/* hide sync game button if contract game result != 0 or if a winner is already declared */}
-              <SyncGameBtn game={game} contractGameId={contractGameId} message={latestSignedMessage} signer={latestSignedPlayer} signature={latestSignedSignature} />
+              <SyncGameBtn game={game} contractGameId={contractGameId} message={latestSignedMessage} signer={latestSignedPlayer as `0x${string}`} signature={latestSignedSignature} />
               {<p>NFT URI Data: {JSON.stringify(nftUriSetData)}</p>}
               {<p>NFT URI pending: {JSON.stringify(isPendingNftUriSet)}</p>}
               {<p>NFT URI error: {JSON.stringify(errorNftUriSet)}</p>}
               {<p>Game to Minted Token ID Data: {stringify(gameToMintedTokenIdData)}</p>}
               {<p>Game to Minted Token ID pending: {JSON.stringify(isPendingGameToMintedTokenId)}</p>}
               {<p>Game to Minted Token ID error: {JSON.stringify(errorGameToMintedTokenId)}</p>}
-              {logs.map((log, index) => <p key={index}>{log}</p>)}
+              {logs.map((log, index) => <p key={`${index}-${log.slice(0, 8)}`}>{log}</p>)}
             </div>
           </details>
           <details>
