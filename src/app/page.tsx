@@ -1,49 +1,51 @@
+"use client";
+
 import { useAccount, useEnsAddress, useEnsName } from 'wagmi'
 import { QueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from "react";
-import { useNavigate } from 'react-router';
-import LoadingIcon from '../loadingIcon';
-import DisplayAddress from '../DisplayAddress';
+import { useRouter } from 'next/navigation';
+import LoadingIcon from './loadingIcon';
+import DisplayAddress from './DisplayAddress';
 import { sdk, type Context } from "@farcaster/frame-sdk"
 import { normalize } from 'viem/ens';
 import { isAddress } from 'viem';
-import { mainnetConfig } from '../wagmiconfig';
+import { mainnetConfig } from './wagmiconfig';
 
-export function meta() {
-  return [
-    { title: "Based Chess" },
-    { name: "description", content: "Welcome to Based Chess" },
-    // {/* prod */}
-    // {
-    //   name: "fc:frame", content: JSON.stringify({
-    //     "version": "next",
-    //     "imageUrl": "https://basedchess.xyz/based-chess-logo-3-2-2.png",
-    //     "button": {
-    //       "title": "Play Based Chess",
-    //       "action": {
-    //         "type": "launch_frame", "name": "Based Chess", "url": "https://based-chess-frame.pages.dev/",
-    //         "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg", "splashBackgroundColor": "#ffffff"
-    //       }
-    //     }
-    //   })
-    // },
+// export function metadata() {
+//   return [
+//     { title: "Based Chess" },
+//     { name: "description", content: "Welcome to Based Chess" },
+//     // {/* prod */}
+//     // {
+//     //   name: "fc:frame", content: JSON.stringify({
+//     //     "version": "next",
+//     //     "imageUrl": "https://basedchess.xyz/based-chess-logo-3-2-2.png",
+//     //     "button": {
+//     //       "title": "Play Based Chess",
+//     //       "action": {
+//     //         "type": "launch_frame", "name": "Based Chess", "url": "https://based-chess-frame.pages.dev/",
+//     //         "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg", "splashBackgroundColor": "#ffffff"
+//     //       }
+//     //     }
+//     //   })
+//     // },
 
-    // {/* dev */}
-    // {
-    //   name: "fc:frame", content: JSON.stringify({
-    //     "version": "next",
-    //     "imageUrl": "https://basedchess.xyz/based-chess-logo-3-2-2.png",
-    //     "button": {
-    //       "title": "Play Based Chess",
-    //       "action": {
-    //         "type": "launch_frame", "name": "Based Chess", "url": "https://6701-52-119-126-16.ngrok-free.app/",
-    //         "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg", "splashBackgroundColor": "#ffffff"
-    //       }
-    //     }
-    //   })
-    // }
-  ];
-}
+//     // {/* dev */}
+//     // {
+//     //   name: "fc:frame", content: JSON.stringify({
+//     //     "version": "next",
+//     //     "imageUrl": "https://basedchess.xyz/based-chess-logo-3-2-2.png",
+//     //     "button": {
+//     //       "title": "Play Based Chess",
+//     //       "action": {
+//     //         "type": "launch_frame", "name": "Based Chess", "url": "https://6701-52-119-126-16.ngrok-free.app/",
+//     //         "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg", "splashBackgroundColor": "#ffffff"
+//     //       }
+//     //     }
+//     //   })
+//     // }
+//   ];
+// }
 
 type GameData = {
   player1Address: `0x${string}` | undefined,
@@ -52,13 +54,13 @@ type GameData = {
   liveViewers: number | undefined,
 }
 
-export default function Home() {
+export default function Page() {
   const [player2AddressOrEnsInput, setPlayer2AddressOrEnsInput] = useState("");
   const [errorCreateGame, setErrorCreateGame] = useState("");
   const [loadingCreateGame, setLoadingCreateGame] = useState(false);
   const [games, setGames] = useState<GameData[]>([]);
   const { address } = useAccount()
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<Context.FrameContext>();
@@ -105,7 +107,7 @@ export default function Home() {
     setErrorCreateGame("");
     setLoadingCreateGame(true);
     const httpsProtocol = window.location.protocol === "https:" ? "https" : "https";
-    const domain = import.meta.env.VITE_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
+    const domain = process.env.NEXT_PUBLIC_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
     const url = `${httpsProtocol}://${domain}/game`;
     // player2Address is the address of the player2 or the address derived from the ens name
     const player2Address = player2AddressFromEns || player2AddressOrEnsInput;
@@ -136,7 +138,7 @@ export default function Home() {
         return;
       }
       await new Promise(resolve => setTimeout(resolve, 3000));
-      navigate(`/games/${gameId}`);
+      router.push(`/games/${gameId}`);
       setLoadingCreateGame(false);
     } catch (error) {
       console.error("Error creating game:", error);
@@ -148,7 +150,7 @@ export default function Home() {
   const getUserGames = async () => {
     setErrorCreateGame("");
     const httpsProtocol = window.location.protocol === "https:" ? "https" : "http";
-    const domain = import.meta.env.VITE_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
+    const domain = process.env.NEXT_PUBLIC_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
     // const domain = "localhost:8787";
     const url = `${httpsProtocol}://${domain}/user/games?address=${address}`;
     const response = await fetch(url, {
@@ -267,12 +269,4 @@ export default function Home() {
   )
 }
 
-
-// Displays an ethereum address in a truncated format by showing the first 6 and last 4 characters
-export const truncateAddress = (address: `0x${string}` | undefined) => {
-  if (!address) {
-    return "";
-  }
-  return `${address.substring(0, 6)}...${address.substring(address.length - 6)}`;
-}
 
