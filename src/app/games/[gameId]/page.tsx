@@ -14,8 +14,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const frame = {
     version: "next",
-    // imageUrl: `${appUrl}/frames/hello/${name}/opengraph-image`,
-    imageUrl: `${appUrl}/based-chess-logo-3-2.jpg`,
+    imageUrl: `${appUrl}/images/games/${gameId}/opengraph-image`,
     button: {
       title: `LaunchGame ${gameId}`,
       action: {
@@ -35,6 +34,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: `Game, ${gameId}`,
       description: `A personalized game frame for ${gameId}`,
+      images: [
+        {
+          url: `${appUrl}/images/games/${gameId}/opengraph-image`,
+        },
+      ],
     },
     other: {
       "fc:frame": JSON.stringify(frame),

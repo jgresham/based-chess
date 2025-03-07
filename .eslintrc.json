@@ -12,5 +12,9 @@
 				"caughtErrorsIgnorePattern": "^_"
 			}
 		]
-	}
+	},
+	"ignorePatterns": [
+		"../chess-worker/src/**/*.ts",
+		"../chess-worker/src/verifyGameUpdate.ts"
+	]
 }
