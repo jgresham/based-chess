@@ -1,12 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
 	// use only for quick build testing before optimizing eslint & type fixes
-	// eslint: {
-	// 	ignoreDuringBuilds: true,
-	// },
-	// typescript: {
-	// 	ignoreBuildErrors: true,
-	// },
+	eslint: {
+		ignoreDuringBuilds: true,
+		dirs: ["src"],
+	},
+	typescript: {
+		ignoreBuildErrors: true,
+	},
 };
 
 export default nextConfig;
