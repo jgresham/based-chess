@@ -5,7 +5,7 @@ import { normalize } from 'viem/ens';
 import { EmojiAvatar } from './EmojiAvatar';
 
 // Displays an ethereum address in a truncated format by showing the first 6 and last 4 characters
-const truncateAddress = (address: `0x${string}` | undefined) => {
+export const truncateAddress = (address: `0x${string}` | undefined) => {
   if (!address) {
     return "";
   }
