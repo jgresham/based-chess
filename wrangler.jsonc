@@ -1,0 +1,58 @@
+{
+	"workers_dev": true,
+	"name": "based-chess-worker-nextjs",
+	"compatibility_date": "2024-11-18",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"main": ".open-next/worker.js",
+	"assets": {
+		"directory": ".open-next/assets/"
+	},
+	"minify": true,
+	"env": {
+		"staging": {
+			"name": "based-chess-worker-nextjs-staging",
+			"vars": {
+				"ENVIRONMENT": "staging",
+				"CHAIN_ID": "84532"
+			},
+			"durable_objects": {
+				"bindings": [
+					{
+						"name": "CHESS_GAME",
+						"class_name": "ChessGame",
+						"script_name": "chess-worker-staging"
+					}
+				]
+			},
+			"services": [
+				{
+					"binding": "RPC_SERVICE",
+					"service": "chess-worker",
+					"entrypoint": "SessionsRPC"
+				}
+			]
+		},
+		"production": {
+			"name": "based-chess-worker-nextjs-prod",
+			"vars": {
+				"ENVIRONMENT": "production",
+				"CHAIN_ID": "8453"
+			},
+			"route": {
+				"pattern": "basedchess.xyz/*",
+				"zone_name": "basedchess.xyz"
+			},
+			"durable_objects": {
+				"bindings": [
+					{
+						"name": "CHESS_GAME",
+						"class_name": "ChessGame",
+						"script_name": "chess-worker"
+					}
+				]
+			}
+		}
+	}
+}

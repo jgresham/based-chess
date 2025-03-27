@@ -926,7 +926,7 @@ export default function Game() {
       </div >
       <div className="w-full flex flex-col md:flex-row">
         {/* Chessboard container */}
-        <div ref={chessboardRef} className={`w-full p-2 md:w-1/2 md:p-0 border-box border-2 ${inCheck ? 'border-red-500' : ' border-transparent'}`}>
+        <div ref={chessboardRef} className={"w-full p-2 md:w-1/2 md:p-0 border-box"}>
           {/* If address is player1 or not player2, show player2's address on top. 
           Board orientation is white on bottom by default. */}
           <div className="flex flex-row pb-2 items-center justify-between">
