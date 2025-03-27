@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Game from "./game";
+import { HEIGHT, WIDTH } from "../../images/games/[gameId]/opengraph-image/route";
 
 const appUrl = process.env.NEXT_PUBLIC_URL;
 console.log("appUrl", appUrl);
@@ -14,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const frame = {
     version: "next",
-    imageUrl: `${appUrl}/images/games/${gameId}/opengraph-image`,
+    imageUrl: `${appUrl}/images/games/${gameId}/opengraph-image?`,
     button: {
       title: "View Game",
       action: {
@@ -28,6 +29,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
   };
 
+  const now = new Date().getTime();
+
   return {
     title: "Based Chess",
     description: `Game ${gameId}`,
@@ -36,12 +39,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: `Game ${gameId}`,
       images: [
         {
-          url: `${appUrl}/images/games/${gameId}/opengraph-image`,
+          url: `${appUrl}/images/games/${gameId}/opengraph-image?${now}`,
+          width: WIDTH,
+          height: HEIGHT,
         },
       ],
     },
     other: {
       "fc:frame": JSON.stringify(frame),
+      "og:updated_time": now,
     },
   };
 }
