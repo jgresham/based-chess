@@ -2,13 +2,10 @@
 
 import { useAccount, useEnsAddress } from 'wagmi'
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from 'next/navigation';
-import LoadingIcon from '../components/loadingIcon';
+import Image from "next/image";
 import DisplayAddress from '../components/util/DisplayAddress';
 import { sdk, type Context } from "@farcaster/frame-sdk"
-import { normalize } from 'viem/ens';
-import { isAddress } from 'viem';
-import { mainnetConfig } from '../lib/wagmiconfig';
+import NewGameSheet from '../components/NewGameSheet';
 
 // export function metadata() {
 //   return [
@@ -54,27 +51,11 @@ type GameData = {
 }
 
 export default function Page() {
-  const [player2AddressOrEnsInput, setPlayer2AddressOrEnsInput] = useState("");
-  const [errorCreateGame, setErrorCreateGame] = useState("");
-  const [loadingCreateGame, setLoadingCreateGame] = useState(false);
   const [games, setGames] = useState<GameData[]>([]);
   const { address } = useAccount()
-  const router = useRouter();
-
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<Context.FrameContext>();
-
-  const [normalizedEnsName, setNormalizedEnsName] = useState<string | undefined>(undefined);
-  const { data: player2AddressFromEns } = useEnsAddress({ config: mainnetConfig, name: normalizedEnsName || "" });
-
-  useEffect(() => {
-    try {
-      setNormalizedEnsName(normalize(player2AddressOrEnsInput));
-    } catch (error) {
-      console.error("Error normalizing ens name:", error);
-      setNormalizedEnsName(undefined);
-    }
-  }, [player2AddressOrEnsInput]);
+  const [errorFetchGames, setErrorFetchGames] = useState("");
 
   useEffect(() => {
     const load = async () => {
@@ -94,7 +75,7 @@ export default function Page() {
   }, [isSDKLoaded]);
 
   const getUserGames = useCallback(async () => {
-    setErrorCreateGame("");
+    setErrorFetchGames("");
     const httpsProtocol = window.location.protocol === "https:" ? "https" : "http";
     const domain = process.env.NEXT_PUBLIC_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
     // const domain = "localhost:8787";
@@ -110,7 +91,7 @@ export default function Page() {
     const games = data.games;
     if (!games) {
       console.error("No games in response");
-      setErrorCreateGame("Unable to get user games");
+      setErrorFetchGames("Unable to get user games");
       setGames([]);
       return;
     }
@@ -125,97 +106,81 @@ export default function Page() {
     }
   }, [address, getUserGames]);
 
-  const onClickCreateGame = async () => {
-    setErrorCreateGame("");
-    setLoadingCreateGame(true);
-    const httpsProtocol = window.location.protocol === "https:" ? "https" : "https";
-    const domain = process.env.NEXT_PUBLIC_WORKER_DOMAIN || "chess-worker.johnsgresham.workers.dev";
-    const url = `${httpsProtocol}://${domain}/game`;
-    // player2Address is the address of the player2 or the address derived from the ens name
-    const player2Address = player2AddressFromEns || player2AddressOrEnsInput;
-    // validate that player2Address is a valid ethereum address
-    if (player2Address === address) {
-      setErrorCreateGame("Invite someone else to play");
-      setLoadingCreateGame(false);
-      return;
-    }
-    if (!isAddress(player2Address)) {
-      setErrorCreateGame("Invalid address or ens name");
-      setLoadingCreateGame(false);
-      return;
-    }
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        body: JSON.stringify({ player1Address: address, player2Address }),
-      });
-      console.log("response:", response);
-      const data: { gameId: string } = await response.json();
-      console.log("data:", data);
-      const gameId = data.gameId;
-      if (!gameId) {
-        console.error("No gameId in response");
-        setErrorCreateGame("Unable to create game");
-        setLoadingCreateGame(false);
-        return;
-      }
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      router.push(`/games/${gameId}`);
-      setLoadingCreateGame(false);
-    } catch (error) {
-      console.error("Error creating game:", error);
-      setErrorCreateGame("Unable to create game");
-      setLoadingCreateGame(false);
-    }
+
+  // Chess board background pattern with subtle blur
+  const BG_OPACITY = 0.025;
+  const bgChessBoardStyles = {
+    backgroundImage: `
+      conic-gradient(rgba(241, 241, 241, ${BG_OPACITY}) 0deg, 
+      rgba(241, 241, 241, ${BG_OPACITY}) 90deg, 
+      rgba(51, 51, 51, ${BG_OPACITY}) 90deg, 
+      rgba(51, 51, 51, ${BG_OPACITY}) 180deg, 
+      rgba(241, 241, 241, ${BG_OPACITY}) 180deg, 
+      rgba(241, 241, 241, ${BG_OPACITY}) 270deg, 
+      rgba(51, 51, 51, ${BG_OPACITY}) 270deg, 
+      rgba(51, 51, 51, ${BG_OPACITY}) 360deg)`,
+    backgroundSize: '100px 100px',
+    backgroundRepeat: 'repeat',
   }
-
   return (
-    <>
-      {/* Chess board background pattern with subtle blur */}
-      <div
-        className="fixed inset-0 top-0 left-0 bottom-0 right-0 z-10 min-h-screen h-full w-full"
-        style={{
-          backgroundImage: "conic-gradient(#f1f1f1 0deg, #f1f1f1 90deg, #333333 90deg, #333333 180deg, #f1f1f1 180deg, #f1f1f1 270deg, #333333 270deg, #333333 360deg)",
-          backgroundSize: '400px 400px',
-          backgroundRepeat: 'repeat',
-          filter: 'blur(3px)',
-          opacity: '0.05',
-        }}
-      />
-      <div className="flex flex-col" >
+    <div className="flex flex-col gap-20 w-full items-center backdrop-blur-[3px]" style={bgChessBoardStyles}>
 
+      {/* Main Content */}
+      <div className="flex flex-col md:min-h-[500px] md:flex-row md:gap-14 w-full items-center space-y-6">
 
-        <div className="flex flex-col gap-2 items-center">
-          {/* <p className="text-2xl font-bold">Openly Verifiable Chess</p> */}
-          <p>Own your wins. No lock-in.</p>
-          <p>Game history verified by cryptography.</p>
-          {context && !context?.client.added && <button type="button" onClick={async () => {
-            console.log("addFrameResults: ", await sdk.actions.addFrame());
-          }}>Add Frame</button>}
+        {/* Devices image */}
+        <div className="md:w-1/2">
+          <Image src="/laptop-n-phone-based-chess-screenshot.png"
+            alt="Based Chess iPhone screenshot" width={1300} height={400}
+            className="md:pl-10 lg:pl-28" />
         </div>
-        <div className="p-4 max-w-sm w-[95vw]">
-          <div className="border border-gray-300 rounded-lg p-4 flex flex-col gap-2">
-            {/* <p className="text-lg font-semibold">New Game</p> */}
-            <label htmlFor="player2AddressInput" className="text-md">Player 2</label>
-            {/* show the player address if the user inputs the ens name */}
-            <input type="text" id="player2AddressInput" value={player2AddressOrEnsInput}
-              onChange={(e) => setPlayer2AddressOrEnsInput(e.target.value)} autoComplete="off"
-              data-1p-ignore data-lpignore="true" data-protonpass-ignore="true" placeholder="address or ens" />
-            {<DisplayAddress address={player2AddressFromEns as `0x${string}`} showAddress={player2AddressOrEnsInput.includes(".eth")} />}
-            <button type="button" disabled={loadingCreateGame} onClick={() => onClickCreateGame()}>{loadingCreateGame ? <LoadingIcon /> : "New Game"}</button>
+
+
+        <div className="flex flex-col">
+          <h1 className="text-4xl font-hand mb-6 text-center lg:text-left">Play Chess</h1>
+
+          {/* Invite a friend button and dialog */}
+          <NewGameSheet />
+
+          {/* Features List */}
+          <div className="w-full space-y-4 my-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xl font-hand">🔒 Openly verifiable wins</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xl font-hand">⛓️ Save games onchain</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xl font-hand">💻 Opensource code</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xl font-hand">🏆 Winners get an NFT</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {errorCreateGame && (
+      </div>
+      {/* <div>
+        <Button variant="link" className="text-white font-hand text-xl">
+          &lt;How it works blog&gt;
+        </Button>
+
+        <div className="text-3xl font-hand mt-6">Coming soon</div>
+      </div> */}
+
+      {errorFetchGames && (
         <div className="flex flex-row gap-2 items-center justify-center text-red-500">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
             <title>Error</title>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
           </svg>
-          <span className="text-red-500">{errorCreateGame}</span>
+          <span className="text-red-500">{errorFetchGames}</span>
         </div>
       )}
+
       <div className='flex flex-col '>
         {games.length > 0 && <div className="flex flex-row gap-2 items-center justify-center">
           <span>Games</span>
@@ -267,7 +232,7 @@ export default function Page() {
           </div>
         ))}
       </div>
-    </>
+    </div>
   )
 }
 
