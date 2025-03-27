@@ -2,7 +2,6 @@ import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { Chess } from "chess.js";
-import { Chessboard } from "react-chessboard";
 import { getFarcasterUserByAddress } from "../../../../../lib/neynar.server";
 
 
@@ -13,8 +12,10 @@ const truncateAddress = (address: `0x${string}` | undefined) => {
   return `${address.substring(0, 6)}...${address.substring(address.length - 6)}`;
 }
 
-const WIDTH = 1200;
-const HEIGHT = 630;
+// 1.5 ratio?
+// 478 x 320 on web tool
+const WIDTH = 900;
+const HEIGHT = 600;
 
 // export default async function handler(request: NextRequest, { params }: { params: { gameId: string } }) {
 export async function GET(request: NextRequest, { params }: { params: { gameId: string } }) {
@@ -56,8 +57,10 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
   //     '[Date "2025-03-06T22:30:37.454Z"]\n' +
   //     '\n' +
   //     // '1. e3 f6 2. Nc3 g5 3. Qh5#'
-  //     '1. e3 f6 2. Nc3 g5 3.'
+  //     '1. e3 f6 2. Nc3 g5 3. Qh5#'
   // }
+
+  // gameData.pgn = '1. e3 f6 2. Nc3 g5 3. Qh5#';
 
   console.log("gameData", gameData);
   if (!gameData || !gameData.player1Address || !gameData.player2Address) {
@@ -67,16 +70,19 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
   console.log("loading chess game");
   const chessGame = new Chess();
   chessGame.loadPgn(gameData.pgn || "");
+  console.log("chessGame moves", chessGame.history());
 
   // Determine game status
   const isGameOver = chessGame.isGameOver();
   const isDraw = chessGame.isDraw();
 
-  const player1FarcasterUser = await getFarcasterUserByAddress(gameData.player1Address);
-  const player2FarcasterUser = await getFarcasterUserByAddress(gameData.player2Address);
+  const [player1FarcasterUser, player2FarcasterUser] = await Promise.all([
+    getFarcasterUserByAddress(gameData.player1Address),
+    getFarcasterUserByAddress(gameData.player2Address),
+  ]);
 
-  const player1DisplayName = player1FarcasterUser?.display_name || truncateAddress(gameData.player1Address as `0x${string}`);
-  const player2DisplayName = player2FarcasterUser?.display_name || truncateAddress(gameData.player2Address as `0x${string}`);
+  const player1DisplayName = player1FarcasterUser?.display_name?.slice(0, 18) || truncateAddress(gameData.player1Address as `0x${string} `);
+  const player2DisplayName = player2FarcasterUser?.display_name?.slice(0, 18) || truncateAddress(gameData.player2Address as `0x${string} `);
   let statusText = "Game in Progress";
   let statusColor = "bg-blue-100 text-blue-800";
 
@@ -87,11 +93,11 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
     } else {
       const winner = chessGame.turn() === 'b' ?
         player1DisplayName : player2DisplayName;
-      statusText = `${winner} Won!`;
+      statusText = `${winner} Won`;
       statusColor = "bg-green-100 text-green-800";
     }
   }
-  statusText = `${statusText} at ${chessGame.moves().length} moves`;
+  statusText = `${statusText} at ${chessGame.history().length / 2} moves`;
 
 
 
@@ -102,13 +108,13 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
     //   < p > {chessGame.isGameOver() ? "Game over" : "In Progress"} </p>
     //   < p > Game data: {JSON.stringify(gameData)} </p>
     // </div>
-    <div tw="w-[1200px] h-[630px] bg-gray-800 flex flex-col font-sans text-white">
+    <div tw="w-[900px] h-[600px] bg-gray-800 flex flex-col font-sans text-white">
       {/* <!-- Header --> */}
-      <div tw="h-32 flex items-center justify-between px-8">
+      <div tw="h-38 flex items-center justify-between px-8">
         <div tw="flex flex-row items-center gap-8">
           {/* <!-- Replace with your actual logo path --> */}
           <img src="https://basedchess.xyz/based-chess-logo-200.jpg" alt="Company Logo" tw="h-24 mr-10" />
-          <h1 tw="text-5xl font-bold text-white">BasedChess</h1>
+          <h1 tw="text-5xl font-bold text-white">Based Chess</h1>
         </div>
       </div>
 
@@ -121,13 +127,13 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
         }}
       /> */}
 
-      {/* {`p1:${JSON.stringify(player1FarcasterUser)}`}
-      {`p2:${JSON.stringify(player2FarcasterUser)}`} */}
+      {/* {`p1:${ JSON.stringify(player1FarcasterUser) } `}
+      {`p2:${ JSON.stringify(player2FarcasterUser) } `} */}
 
       {/* <!-- Main Content --> */}
       <div tw="flex-1 flex flex-col items-center justify-center p-8 gap-10">
         {/* <!-- Game Status --> */}
-        <div tw="flex flex-col rounded-lg p-20 w-full">
+        <div tw="flex flex-col rounded-lg p-6 w-full">
           {/* <h2 tw="text-2xl font-bold text-gray-200 mb-6 text-center">Game Summary</h2> */}
 
           {/* <!-- Players --> */}
@@ -135,14 +141,24 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
             <div tw="flex flex-col items-center">
               {/* <span tw="text-lg font-semibold text-gray-300">White</span> */}
               {player1FarcasterUser?.pfp_url ? <img src={player1FarcasterUser.pfp_url} alt="Player 1 Profile img" tw="h-32" width={128} height={128} />
-                : <div tw="h-32 w-32 bg-gray-700 rounded-full" />}
+                : <div tw="h-32 w-32 bg-gray-700 rounded-full flex items-center justify-center">
+                  {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
+                  <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A0AEC0" />
+                  </svg>
+                </div>}
               <span tw="text-4xl text-gray-200 mt-3">{player1DisplayName}</span>
             </div>
             <div tw="text-5xl font-bold text-gray-300">vs</div>
             <div tw="flex flex-col items-center">
               {/* <span tw="text-lg font-semibold text-gray-300">Black</span> */}
               {player2FarcasterUser?.pfp_url ? <img src={player2FarcasterUser.pfp_url} alt="Player 2 Profile img" tw="h-32" width={128} height={128} />
-                : <div tw="h-32 w-32 bg-gray-700 rounded-full" />}
+                : <div tw="h-32 w-32 bg-gray-700 rounded-full flex items-center justify-center">
+                  {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
+                  <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A0AEC0" />
+                  </svg>
+                </div>}
               <span tw="text-4xl text-gray-200 mt-3">{player2DisplayName}</span>
             </div>
           </div>

@@ -16,10 +16,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     version: "next",
     imageUrl: `${appUrl}/images/games/${gameId}/opengraph-image`,
     button: {
-      title: `LaunchGame ${gameId}`,
+      title: "View Game",
       action: {
         type: "launch_frame",
-        name: "Game Farcaster Frames v2 Demo",
+        name: "Based Chess",
         url: `${appUrl}/games/${gameId}/`,
         // splashImageUrl: `${appUrl}/splash.png`,
         splashImageUrl: `${appUrl}/based-chess-logo-200.jpg`,
@@ -29,11 +29,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 
   return {
-    title: `Game, ${gameId}`,
-    description: `A personalized game frame for ${gameId}`,
+    title: "Based Chess",
+    description: `Game ${gameId}`,
     openGraph: {
-      title: `Game, ${gameId}`,
-      description: `A personalized game frame for ${gameId}`,
+      title: "Based Chess",
+      description: `Game ${gameId}`,
       images: [
         {
           url: `${appUrl}/images/games/${gameId}/opengraph-image`,
