@@ -131,7 +131,7 @@ export default function Page() {
         {/* Devices image */}
         <div className="md:w-1/2">
           <Image src="/laptop-n-phone-based-chess-screenshot.png"
-            alt="Based Chess iPhone screenshot" width={1300} height={400}
+            alt="Based Chess iPhone screenshot" width={6440} height={4200}
             className="md:pl-10 lg:pl-28" />
         </div>
 
