@@ -4,6 +4,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import "./globals.css";
 import Providers from "../components/providers/providers";
 import '../../node_modules/@rainbow-me/rainbowkit/dist/index.css';
+import { DarkModeToggle } from "../components/DarkModeToggle";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -30,29 +31,31 @@ const appUrl = process.env.NEXT_PUBLIC_URL;
 // <meta name="twitter:description" content="Welcome to Based Chess" />
 // <meta name="twitter:image" content="https://basedchess.xyz/based-chess-logo.jpg" /> */}
 
-export const metadata: Metadata = {
-  title: "Based Chess",
-  description: "Welcome to Based Chess",
-  icons: {
-    icon: `${appUrl}/based-chess-logo-3-2-2.png`,
-  },
-  other: {
-    "fc:frame": JSON.stringify({
-      version: "next",
-      imageUrl: `${appUrl}/based-chess-logo-3-2-2.png`,
-      button: {
-        title: "Play Chess",
-        action: {
-          type: "launch_frame",
-          name: "Based Chess",
-          url: `${appUrl}/`,
-          splashImageUrl: `${appUrl}/based-chess-logo-200.jpg`,
-          splashBackgroundColor: "#ffffff"
+export function generateMetadata(): Metadata {
+  return {
+    title: "Based Chess",
+    description: "Welcome to Based Chess",
+    icons: {
+      icon: `${appUrl}/based-chess-logo-3-2-2.png`,
+    },
+    other: {
+      "fc:frame": JSON.stringify({
+        version: "next",
+        imageUrl: `${appUrl}/based-chess-logo-3-2-2.png`,
+        button: {
+          title: "Play Chess",
+          action: {
+            type: "launch_frame",
+            name: "Based Chess",
+            url: `${appUrl}/`,
+            splashImageUrl: `${appUrl}/based-chess-logo-200.jpg`,
+            splashBackgroundColor: "#ffffff"
+          }
         }
-      }
-    })
-  }
-};
+      })
+    }
+  };
+}
 
 export default function RootLayout({
   children,
@@ -60,9 +63,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`bg-background text-foreground ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {/* inside of body prev */}
         <Providers>
@@ -75,9 +78,12 @@ export default function RootLayout({
               <div><ConnectButton /></div>
             </div>
             {children}
-            <div className='flex flex-col items-center justify-center pt-16 pb-8 pr-8 pl-8 gap-2'>
+            {/* <div className='flex flex-row items-center justify-end w-full p-2'> */}
+            <div className='flex flex-row w-full space-between items-center justify-center pt-16 pb-8 pr-8 pl-8 gap-2'>
+              <DarkModeToggle />
               <a href="https://github.com/jgresham/based-chess">Based Chess Github</a>
             </div>
+            {/* </div> */}
           </main>
         </Providers>
       </body>
