@@ -171,7 +171,20 @@ export default function Page() {
 
   return (
     <>
-      <div className="flex flex-col">
+      {/* Chess board background pattern with subtle blur */}
+      <div
+        className="fixed inset-0 top-0 left-0 bottom-0 right-0 z-10 min-h-screen h-full w-full"
+        style={{
+          backgroundImage: "conic-gradient(#f1f1f1 0deg, #f1f1f1 90deg, #333333 90deg, #333333 180deg, #f1f1f1 180deg, #f1f1f1 270deg, #333333 270deg, #333333 360deg)",
+          backgroundSize: '400px 400px',
+          backgroundRepeat: 'repeat',
+          filter: 'blur(3px)',
+          opacity: '0.05',
+        }}
+      />
+      <div className="flex flex-col" >
+
+
         <div className="flex flex-col gap-2 items-center">
           {/* <p className="text-2xl font-bold">Openly Verifiable Chess</p> */}
           <p>Own your wins. No lock-in.</p>
