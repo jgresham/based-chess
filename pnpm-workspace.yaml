@@ -1,3 +1,4 @@
-packages:
-  - '.'
-  - 'chess-worker'
+# uncomment to test locally with the chess-worker
+# packages:
+#   - '.'
+#   - 'chess-worker'

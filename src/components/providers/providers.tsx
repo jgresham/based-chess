@@ -4,6 +4,7 @@ import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import sdk, { type Context } from "@farcaster/frame-sdk";
 import { useState, useEffect } from "react";
 import { darkTheme } from "@rainbow-me/rainbowkit";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
 
@@ -28,9 +29,17 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   }, [isSDKLoaded]);
 
   return (
+
     <FrameProvider>
       <RainbowKitProvider theme={darkTheme()}>
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
       </RainbowKitProvider>
     </FrameProvider>
   );
