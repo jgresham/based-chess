@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "previewNew": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deployNew": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "build:worker": "opennextjs-cloudflare",
     "dev:worker": "wrangler dev --port 8771",
     "preview:worker": "npm run build:worker && npm run dev:worker",
     "deploy:worker": "npm run build:worker && wrangler deploy",
-    "build:staging": "vite build -- -e staging",
+    "deploy:staging": "npm run build:worker -e staging && wrangler deploy -e staging",
     "deploy": "npm run build && wrangler deploy",
     "lintAndSafeFix": "biome lint --write",
     "lintAndHardFix": "npx @biomejs/biome check --write",
@@ -47,7 +49,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@cloudflare/workers-types": "^4.20250327.0",
-    "@opennextjs/cloudflare": "^0.6.3",
+    "@opennextjs/cloudflare": "^0.5.12",
     "@types/node": "^22.13.14",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.3",
