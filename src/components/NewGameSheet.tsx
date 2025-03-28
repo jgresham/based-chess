@@ -22,6 +22,7 @@ import { isAddress } from 'viem';
 import DisplayAddress from '../components/util/DisplayAddress';
 import LoadingIcon from '../components/loadingIcon';
 import { useRouter } from 'next/navigation';
+import { useConnectModal } from "@rainbow-me/rainbowkit"
 
 export default function NewGameSheet() {
   const [open, setOpen] = useState(false);
@@ -29,9 +30,18 @@ export default function NewGameSheet() {
   const [normalizedEnsName, setNormalizedEnsName] = useState<string | undefined>(undefined);
   const { data: player2AddressFromEns } = useEnsAddress({ config: mainnetConfig, name: normalizedEnsName || "" });
   const [loadingCreateGame, setLoadingCreateGame] = useState(false);
+  const [openAfterConnect, setOpenAfterConnect] = useState(false);
   const [errorCreateGame, setErrorCreateGame] = useState("");
   const router = useRouter();
   const { address } = useAccount()
+  const { openConnectModal } = useConnectModal();
+
+  useEffect(() => {
+    if (openAfterConnect && address) {
+      setOpen(true);
+      setOpenAfterConnect(false);
+    }
+  }, [address, openAfterConnect]);
 
   useEffect(() => {
     try {
@@ -50,7 +60,9 @@ export default function NewGameSheet() {
     // Prevent default behavior which closes the sheet
     e.preventDefault();
     await createGame();
-    setOpen(false);
+    if (!errorCreateGame) {
+      setOpen(false);
+    }
     // The sheet will remain open until the operation completes
     // It will be redirected by the router.push in onClickCreateGame if successful
   };
@@ -75,6 +87,7 @@ export default function NewGameSheet() {
       return;
     }
     try {
+      console.log("creating game with player1Address:", address, "and player2Address:", player2Address);
       const response = await fetch(url, {
         method: "POST",
         body: JSON.stringify({ player1Address: address, player2Address }),
@@ -99,11 +112,22 @@ export default function NewGameSheet() {
     }
   }
 
+  const handleInviteFriendClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setOpenAfterConnect(false);
+    if (address) {
+      setOpen(true);
+    } else {
+      setOpenAfterConnect(true);
+      openConnectModal?.();
+    }
+  }
+
   return (
     <div className="grid gap-2">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <Button className="w-64 h-14 text-xl rounded-half">Invite a Friend</Button>
+          <Button className="w-64 h-14 text-xl rounded-half" onClick={(e) => handleInviteFriendClick(e)}>Invite a Friend</Button>
         </SheetTrigger>
         <SheetContent side="bottom">
           <div className="flex justify-center">
@@ -134,7 +158,7 @@ export default function NewGameSheet() {
               <SheetFooter>
                 <SheetClose asChild>
                   <Button type="button"
-                    disabled={loadingCreateGame}
+                    disabled={loadingCreateGame || !address}
                     onClick={handleCreateGameClick}>
                     {loadingCreateGame ? <LoadingIcon /> : "New Game"}
                   </Button>

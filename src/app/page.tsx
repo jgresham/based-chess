@@ -132,7 +132,8 @@ export default function Page() {
         <div className="md:w-1/2">
           <Image src="/laptop-n-phone-based-chess-screenshot.png"
             alt="Based Chess iPhone screenshot" width={6440} height={4200}
-            className="md:pl-10 lg:pl-28" />
+            className="md:pl-10 lg:pl-28"
+            unoptimized />
         </div>
 
 
