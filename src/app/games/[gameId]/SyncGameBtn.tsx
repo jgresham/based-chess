@@ -1,6 +1,7 @@
 import type { Chess } from "chess.js";
 import { useChainId, useSimulateContract, useWriteContract } from "wagmi";
 import { contracts, type SupportedChainId } from "../../../lib/contracts";
+import { Button } from "@/components/ui/button";
 
 export function SyncGameBtn({ game, contractGameId, message, signer, signature }: { game?: Chess, contractGameId?: number, message?: string, signer?: `0x${string}`, signature?: `0x${string}` }) {
   const { writeContract, isPending, error, data: txHash } = useWriteContract();
@@ -51,7 +52,7 @@ export function SyncGameBtn({ game, contractGameId, message, signer, signature }
   }
 
   return (<>
-    <button type="button" onClick={onClickSyncGame}>Sync Game on Base</button>
+    <Button className="w-fit justify-end" variant="outline" onClick={onClickSyncGame}>Sync Game on Base</Button>
     {txHash && <p>txHash: {txHash}</p>}
     {isPending && <p>isPending: {isPending}</p>}
     {error && <p>error: {error.toString()}</p>}

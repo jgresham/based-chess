@@ -8,6 +8,14 @@ const nextConfig = {
 	typescript: {
 		ignoreBuildErrors: true,
 	},
+	images: {
+		remotePatterns: [
+			{
+				hostname: "ipfs.io",
+				protocol: "https",
+			},
+		],
+	},
 };
 
 export default nextConfig;

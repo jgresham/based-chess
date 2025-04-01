@@ -52,3 +52,15 @@ export const GameResult = {
   DRAW_RESULT_STALEMATE: 3,
   DRAW_RESULT_THREEFOLD_REPETITION: 4
 };
+
+
+export const blockExplorers: Record<SupportedChainId, { name: string, url: string }> = {
+  [8453]: {
+    name: "Basescan",
+    url: "https://basescan.org",
+  },
+  [84532]: {
+    name: "Basescan Sepolia",
+    url: "https://sepolia.basescan.org",
+  }
+}
