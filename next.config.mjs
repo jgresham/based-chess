@@ -9,9 +9,14 @@ const nextConfig = {
 		ignoreBuildErrors: true,
 	},
 	images: {
+		disableStaticImages: true,
 		remotePatterns: [
 			{
 				hostname: "ipfs.io",
+				protocol: "https",
+			},
+			{
+				hostname: "basedchess.xyz",
 				protocol: "https",
 			},
 		],
