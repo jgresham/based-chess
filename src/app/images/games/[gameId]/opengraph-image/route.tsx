@@ -110,7 +110,10 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
     //   < p > {chessGame.isGameOver() ? "Game over" : "In Progress"} </p>
     //   < p > Game data: {JSON.stringify(gameData)} </p>
     // </div>
-    <div tw="w-[900px] h-[600px] bg-gray-800 flex flex-col font-sans text-white">
+    <div tw="w-[900px] h-[600px] flex flex-col font-sans text-white"
+      style={{
+        background: 'radial-gradient(circle at top left, #1e3a8a, transparent), radial-gradient(circle at bottom right, #1e293c, transparent), linear-gradient(to bottom right, #121212, #1e293c)'
+      }}>
       {/* <!-- Header --> */}
       <div tw="h-38 flex items-center justify-between px-8 pt-24">
         <div tw="flex flex-row items-center gap-8">
