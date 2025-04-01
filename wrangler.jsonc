@@ -2,14 +2,16 @@
 	"workers_dev": true,
 	"name": "based-chess-worker-nextjs",
 	"compatibility_date": "2024-11-18",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
+	"compatibility_flags": ["nodejs_compat"],
 	"main": ".open-next/worker.js",
 	"assets": {
-		"directory": ".open-next/assets/"
+		"directory": ".open-next/assets"
 	},
 	"minify": true,
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1
+	},
 	"env": {
 		"staging": {
 			"name": "based-chess-worker-nextjs-staging",
@@ -32,6 +34,12 @@
 					"service": "chess-worker",
 					"entrypoint": "SessionsRPC"
 				}
+			],
+			"routes": [
+				{
+					"pattern": "staging.basedchess.xyz/*",
+					"zone_name": "basedchess.xyz"
+				}
 			]
 		},
 		"production": {
@@ -40,10 +48,16 @@
 				"ENVIRONMENT": "production",
 				"CHAIN_ID": "8453"
 			},
-			"route": {
-				"pattern": "basedchess.xyz/*",
-				"zone_name": "basedchess.xyz"
-			},
+			"routes": [
+				{
+					"pattern": "basedchess.xyz/*",
+					"zone_name": "basedchess.xyz"
+				},
+				{
+					"pattern": "www.basedchess.xyz/*",
+					"zone_name": "basedchess.xyz"
+				}
+			],
 			"durable_objects": {
 				"bindings": [
 					{
