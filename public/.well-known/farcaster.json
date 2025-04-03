@@ -1,18 +1,18 @@
 {
   "accountAssociation": {
     "header": "eyJmaWQiOjcxMCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGRlMGYyMDcxNzNCNzk2ZGM3ZmFjMTlFNDFjZjgwNTU3MzU5NzhGODMifQ",
-    "payload": "eyJkb21haW4iOiJiYXNlZC1jaGVzcy1mcmFtZS5wYWdlcy5kZXYifQ",
-    "signature": "MHhiN2YwNTUzODQ5ZGNiNjc3NTllOWI3MTAwOWQ1OTRmOWFhYmQyZTE1ZDBiOWQ2MmNlYjAxODQ5YTZlMDU5NTU1NjhlNWM0M2ZiYzc3ZGEyNGFiYmJiMWI2Nzg5MzRlNjdlYmNlNzU2MTczNzAxYmEwNTY4YTczZTVlNDI3MzE0MTFi"
+    "payload": "eyJkb21haW4iOiJiYXNlZGNoZXNzLnh5eiJ9",
+    "signature": "MHg0NDk1YjY2Mzc1M2FkZDQ3NDQwYjdhZTc5ZmIyYTZmOTE1YzhlM2UwZDA1YTVkYzUwYTgzYzg0MjZhYTUyYjM0MmNiZmE5NWExNDEzZDNmZDJhMGE2OWYwYzg5YzUxZDIwN2M1YmUzZDk0ODRkOWRhMDhjYWM0OWI3YjlkNjFiNjFi"
   },
   "frame": {
     "version": "next",
     "name": "Chess",
     "iconUrl": "https://basedchess.xyz/based-chess-logo-200.jpg",
-    "homeUrl": "https://based-chess-frame.pages.dev/",
-    "imageUrl": "https://basedchess.xyz/based-chess-logo.jpg",
+    "homeUrl": "https://basedchess.xyz/",
+    "imageUrl": "https://basedchess.xyz/ogimage.jpg",
     "buttonTitle": "Play Chess",
     "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg",
     "splashBackgroundColor": "#ffffff",
-    "webhookUrl": "https://basedchess.xyz/api/webhook"
+    "webhookUrl": "https://api.neynar.com/f/app/b7782930-4a30-4d38-99bf-6907c9a69faa/event"
   }
 }

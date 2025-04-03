@@ -128,6 +128,8 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
 					{/* <!-- Replace with your actual logo path --> */}
 					<img
 						src="https://basedchess.xyz/based-chess-logo-200.jpg"
+						width={96}
+						height={96}
 						alt="Company Logo"
 						tw="h-24 mr-10"
 					/>

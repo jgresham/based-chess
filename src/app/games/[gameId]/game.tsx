@@ -38,6 +38,8 @@ import { Button, buttonVariants } from "../../../components/ui/button";
 import { ArrowUpRight, ChevronLeft, Download, Eye, Share } from "lucide-react";
 import { MintGameWinNFTBtn, type MintStep } from "./MintGameWinNFTBtn";
 import { useDevMode } from "../../../components/hooks/useLocalSettings";
+import { useFarcasterUser } from "../../../components/hooks/useFarcasterUser";
+import { FarcasterUser } from "../../../lib/neynar.server";
 
 export type WsMessage = {
 	type: string;
@@ -70,44 +72,6 @@ const isPlayerLocalWinner = ({
 	return false;
 };
 
-export function meta({ params }: { params: { gameId: string } }) {
-	return [
-		{
-			name: "description",
-			content: `Chess Game ${params.gameId}`,
-		},
-		// {/* prod */}
-		// {
-		//   name: "fc:frame", content: JSON.stringify({
-		//     "version": "next",
-		//     "imageUrl": "https://basedchess.xyz/based-chess-logo-3-2-2.png",
-		//     "button": {
-		//       "title": "Play Based Chess",
-		//       "action": {
-		//         "type": "launch_frame", "name": "Based Chess", "url": "https://based-chess-frame.pages.dev/",
-		//         "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg", "splashBackgroundColor": "#ffffff"
-		//       }
-		//     }
-		//   })
-		// },
-
-		// {/* dev */}
-		// {
-		//   name: "fc:frame", content: JSON.stringify({
-		//     "version": "next",
-		//     "imageUrl": "https://basedchess.xyz/based-chess-logo-3-2-2.png",
-		//     "button": {
-		//       "title": `Chess Game ${params.gameId}`,
-		//       "action": {
-		//         "type": "launch_frame", "name": "Based Chess", "url": `https://6701-52-119-126-16.ngrok-free.app/games/${params.gameId}`,
-		//         "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg", "splashBackgroundColor": "#ffffff"
-		//       }
-		//     }
-		//   })
-		// }
-	];
-}
-
 type NFTMetadata = {
 	name: string;
 	description: string;
@@ -126,6 +90,12 @@ export default function Game() {
 	const params = useParams();
 	const [player1Address, setPlayer1Address] = useState("");
 	const [player2Address, setPlayer2Address] = useState("");
+	const { data: player1FarcasterData } = useFarcasterUser(
+		player1Address.toLowerCase() as `0x${string}`,
+	);
+	const { data: player2FarcasterData } = useFarcasterUser(
+		player2Address.toLowerCase() as `0x${string}`,
+	);
 	const [liveViewers, setLiveViewers] = useState<number>();
 	const [latestPlayer1Signature, setLatestPlayer1Signature] = useState<`0x${string}` | undefined>();
 	const [latestPlayer1Message, setLatestPlayer1Message] = useState<string | undefined>();
@@ -1119,22 +1089,6 @@ export default function Game() {
               <Download className="mr-1" size={16} />
               Mint Game Win NFT
             </Button>} */}
-						{game?.isGameOver() === true &&
-							isPlayerLocalWinner({
-								game,
-								address,
-								player1Address,
-								player2Address,
-							}) && (
-								<MintGameWinNFTBtn
-									mintStep={mintStep}
-									game={game}
-									contractGameId={contractGameId}
-									message={latestSignedMessage}
-									signer={latestSignedPlayer as `0x${string}`}
-									signature={latestSignedSignature}
-								/>
-							)}
 					</div>
 				</div>
 				<TooltipProvider>
@@ -1209,6 +1163,9 @@ export default function Game() {
 							<DisplayAddress
 								address={topAddress as `0x${string}`}
 								emphasize={playerOnTheClock === topAddress}
+								farcasterData={
+									topAddress === player1Address ? player1FarcasterData : player2FarcasterData
+								}
 							/>
 						</span>
 						{playerOnTheClock === topAddress && <OnTheClock />}
@@ -1243,6 +1200,9 @@ export default function Game() {
 							<DisplayAddress
 								address={bottomAddress as `0x${string}`}
 								emphasize={playerOnTheClock === bottomAddress}
+								farcasterData={
+									bottomAddress === player1Address ? player1FarcasterData : player2FarcasterData
+								}
 							/>
 						</span>
 						{playerOnTheClock === bottomAddress && <OnTheClock />}
@@ -1251,6 +1211,57 @@ export default function Game() {
 
 				{/* Game info container */}
 				<div className="w-full md:w-1/2 border-gray-200 flex flex-col gap-2 p-2 break-words">
+					{/* Onchain actions */}
+					{game?.isGameOver() === true &&
+						isPlayerLocalWinner({
+							game,
+							address,
+							player1Address,
+							player2Address,
+						}) && (
+							<div className="text-center">
+								<MintGameWinNFTBtn
+									mintStep={mintStep}
+									game={game}
+									contractGameId={contractGameId}
+									message={latestSignedMessage}
+									signer={latestSignedPlayer as `0x${string}`}
+									signature={latestSignedSignature}
+								/>
+							</div>
+						)}
+					{isNFTMinted && (
+						<div className="flex flex-col gap-2 mb-6 pl-2 items-center">
+							<p>
+								NFT Minted!
+								<Link
+									href={`${blockExplorers[chainId as SupportedChainId]?.url}/nft/${contracts.nftContract[chainId as SupportedChainId]?.address}/${nftTokenId}`}
+									className={`${buttonVariants({ variant: "link" })} w-fit`}
+									target="_blank"
+								>
+									View NFT on {blockExplorers[chainId as SupportedChainId]?.name} <ArrowUpRight />
+								</Link>
+							</p>
+							{nftMetadata && (
+								<div className="w-[200px] h-[200px]">
+									<Image
+										src={`https://ipfs.io/ipfs/${nftMetadata?.image.split("//")[1]}`}
+										alt="NFT"
+										width={780}
+										height={780}
+										unoptimized
+									/>
+								</div>
+							)}
+							{nftMetadata && (
+								<div>
+									{/* ex: https://basescan.org/nft/0xc43383b7265ebC4DB56df41b8D88289Ec87d1621/5 */}
+								</div>
+							)}
+							{/* hide sync game button if contract game result != 0 or if a winner is already declared */}
+						</div>
+					)}
+
 					{game && (
 						<div className="mb-10">
 							<p>
@@ -1288,33 +1299,6 @@ export default function Game() {
 							</div>
 						</div>
 					)}
-
-					{/* Onchain actions */}
-					<div className="flex flex-col gap-2 mb-10">
-						{isNFTMinted && <p>NFT Minted! Token ID: {nftTokenId}</p>}
-						{nftMetadata && (
-							<div className="w-[200px] h-[200px]">
-								<Image
-									src={`https://ipfs.io/ipfs/${nftMetadata?.image.split("//")[1]}`}
-									alt="NFT"
-									width={780}
-									height={780}
-								/>
-							</div>
-						)}
-						{nftMetadata && (
-							<div>
-								<Link
-									href={`${blockExplorers[chainId as SupportedChainId].url}/token/${contracts.nftContract[chainId as SupportedChainId].address}?a=${nftTokenId}`}
-									className={`${buttonVariants({ variant: "link" })} w-fit`}
-									target="_blank"
-								>
-									View NFT on {blockExplorers[chainId as SupportedChainId].name} <ArrowUpRight />
-								</Link>
-							</div>
-						)}
-						{/* hide sync game button if contract game result != 0 or if a winner is already declared */}
-					</div>
 
 					{/* ------ Technical info ------ */}
 					<h3 className="pt-6 text-h3">Verifiable game state</h3>
