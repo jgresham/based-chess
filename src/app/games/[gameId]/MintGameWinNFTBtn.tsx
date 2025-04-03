@@ -141,7 +141,7 @@ export function MintGameWinNFTBtn({
 				variant="outline"
 				disabled={isSyncingGame || isMintingNFT}
 				onClick={onClickMintNFT}
-				className="w-fit relative overflow-hidden bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500 text-white font-bold hover:from-yellow-500 hover:via-pink-500 hover:to-purple-500 transition-all duration-300 shadow-lg"
+				className="w-fit relative overflow-hidden bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500 text-white font-bold hover:from-yellow-500 hover:via-pink-500 hover:to-purple-500 transition-all duration-300 shadow-lg border-0"
 			>
 				<span className="absolute inset-0 w-1/3 h-full bg-white opacity-20 transform -skew-x-12 animate-shine" />
 				<Download className="mr-1" size={16} />

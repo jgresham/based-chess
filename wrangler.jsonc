@@ -18,7 +18,12 @@
 			"vars": {
 				"ENVIRONMENT": "staging",
 				"CHAIN_ID": "84532"
+				// "NEXT_PUBLIC_URL": "https://staging.basedchess.xyz",
+				// "NEXT_PUBLIC_WORKER_DOMAIN": "chess-worker-staging.johnsgresham.workers.dev"
 			},
+			// "build": {
+			// 	"command": "NODE_ENV=staging npm run build"
+			// },
 			"durable_objects": {
 				"bindings": [
 					{
@@ -47,6 +52,8 @@
 			"vars": {
 				"ENVIRONMENT": "production",
 				"CHAIN_ID": "8453"
+				// "NEXT_PUBLIC_WORKER_DOMAIN": "chess-worker.johnsgresham.workers.dev",
+				// "NEXT_PUBLIC_URL": "https://basedchess.xyz"
 			},
 			"routes": [
 				{

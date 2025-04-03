@@ -9,7 +9,8 @@ const nextConfig = {
 		ignoreBuildErrors: true,
 	},
 	images: {
-		disableStaticImages: true,
+		loader: "custom",
+		loaderFile: "./image-loader.ts",
 		remotePatterns: [
 			{
 				hostname: "ipfs.io",
@@ -17,6 +18,10 @@ const nextConfig = {
 			},
 			{
 				hostname: "basedchess.xyz",
+				protocol: "https",
+			},
+			{
+				hostname: "based-chess-worker-nextjs-prod.johnsgresham.workers.dev",
 				protocol: "https",
 			},
 		],

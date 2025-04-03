@@ -5,12 +5,14 @@ if (process.env.NEYNAR_API_KEY) {
   process.exit(1);
 }
 
-export const getFarcasterUserByAddress = async (address: string): Promise<{
+export type FarcasterUser = {
   fid: number;
   username: string;
   display_name: string;
   pfp_url: string;
-}> => {
+}
+
+export const getFarcasterUserByAddress = async (address: string): Promise<FarcasterUser | null> => {
   const response = await fetch(`https://api.neynar.com/v2/farcaster/user/bulk-by-address?addresses=${address}`, {
     headers: {
       'accept': 'application/json',

@@ -23,7 +23,10 @@ const walletConnectors = connectorsForWallets([
       walletConnectWallet,
     ],
   }],
-  { appName: 'Based Chess', projectId: 'fc0abe40a98d684825700df3507dc133' },
+  {
+    appName: 'Based Chess',
+    projectId: 'fc0abe40a98d684825700df3507dc133',
+  },
 );
 
 const chains: Chain[] = [base];
@@ -45,15 +48,15 @@ export const frameWagmiConfig = createConfig({
     [baseSepolia.id]: http('https://base-sepolia.g.alchemy.com/v2/xFjQGD9_D32OdWAY-iyViQ7xHYHIUF-i'),
   },
   connectors: [farcasterFrame(),
-  walletConnect({
-    projectId: 'fc0abe40a98d684825700df3507dc133',
-    metadata: {
-      name: 'Based Chess',
-      description: 'Own your wins',
-      url: 'https://basedchess.xyz',
-      icons: ['https://basedchess.xyz/based-chess-logo.jpg'],
-    },
-  }),
+  // walletConnect({
+  //   projectId: 'fc0abe40a98d684825700df3507dc133',
+  //   metadata: {
+  //     name: 'Based Chess',
+  //     description: 'Own your wins',
+  //     url: 'https://basedchess.xyz',
+  //     icons: ['https://basedchess.xyz/based-chess-logo.jpg'],
+  //   },
+  // }),
   ...walletConnectors],
 });
 
