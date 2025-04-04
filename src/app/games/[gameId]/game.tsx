@@ -498,9 +498,17 @@ export default function Game() {
 		setGame(newGame);
 	};
 
-	const playDropChessPieceSound = async () => {
-		audioPlayerDropChessPiece?.play();
-	};
+	const playDropChessPieceSound = useCallback(async () => {
+		if (audioPlayerDropChessPiece) {
+			console.log("playing drop chess piece sound");
+			audioPlayerDropChessPiece.play();
+		} else {
+			console.log("no audio player drop chess piece. attempting reset");
+			const audioPlayerDropChessPiece = new Audio("/sounds/drop_piece.mp3");
+			setAudioPlayerDropChessPiece(audioPlayerDropChessPiece);
+			audioPlayerDropChessPiece.play();
+		}
+	}, [audioPlayerDropChessPiece]);
 
 	// todo: validate the other user's signature with the move and the pgn
 	const onMoveRecieved = (messageData: {

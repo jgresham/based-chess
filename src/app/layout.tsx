@@ -7,6 +7,8 @@ import "../../node_modules/@rainbow-me/rainbowkit/dist/index.css";
 import Link from "next/link";
 import Image from "next/image";
 import { Footer } from "./footer";
+import { useDevMode } from "../components/hooks/useLocalSettings";
+import { ErudaEnabler } from "../components/util/ErudaEnabler";
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
 	variable: "--font-geist-sans",
@@ -119,13 +121,8 @@ export default function RootLayout({
 						<Footer />
 						{/* </div> */}
 					</main>
+					<ErudaEnabler />
 				</Providers>
-				{process.env.NODE_ENV !== "production" && (
-					<>
-						<script src="https://cdn.jsdelivr.net/npm/eruda" />
-						<script>eruda.init();</script>
-					</>
-				)}
 			</body>
 		</html>
 	);
