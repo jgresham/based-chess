@@ -148,13 +148,13 @@ export default function Page() {
 			{/* Main Content */}
 			<div className="flex flex-col md:min-h-[500px] md:flex-row md:gap-14 w-full items-center space-y-6">
 				{/* Devices image */}
-				<div className="md:w-1/2">
+				<div className="md:w-[65%]">
 					<Image
-						src="/screenshot.png"
-						alt="Based Chess iPhone screenshot"
+						src="/screenshots.png"
+						alt="Based Chess Laptop and iPhone screenshots"
 						width={3000}
 						height={1957}
-						className="md:pl-10 lg:pl-28"
+						className="md:pl-6 "
 						priority
 					/>
 				</div>

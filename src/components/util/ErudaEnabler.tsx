@@ -18,8 +18,8 @@ export const ErudaEnabler = () => {
 		if (isDevMode && isMounted) {
 			console.log("initializing eruda");
 			import("eruda").then((eruda) => {
-				eruda.default.init();
 				setIsInitialized(true);
+				eruda.default.init();
 			});
 		} else {
 			if (isInitialized) {
