@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import "./globals.css";
 import Providers from "../components/providers/providers";
 import "../../node_modules/@rainbow-me/rainbowkit/dist/index.css";
-import Link from "next/link";
-import Image from "next/image";
 import { Footer } from "./footer";
 import { useDevMode } from "../components/hooks/useLocalSettings";
 import { ErudaEnabler } from "../components/util/ErudaEnabler";
+import { Header } from "./header";
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
 	variable: "--font-geist-sans",
@@ -93,29 +91,7 @@ export default function RootLayout({
 				<Providers>
 					{/* // 98% to leave room for vertical scrollbar */}
 					<main className="flex flex-col items-center h-full w-[98%] justify-self-center">
-						<div className="flex flex-row items-center justify-between w-full p-2">
-							<Link href={"/"}>
-								<div className="flex flex-row items-center gap-2">
-									<Image
-										src="/based-chess-logo-200.jpg"
-										alt="Based Chess Logo"
-										width={32}
-										height={32}
-										unoptimized
-									/>
-									<div className="font-bold hidden sm:block">Based Chess</div>
-								</div>
-							</Link>
-							{process.env.NEXT_PUBLIC_WORKER_DOMAIN?.includes("localhost") && (
-								<div className="text-xs text-green-500">DEV</div>
-							)}
-							{process.env.NEXT_PUBLIC_WORKER_DOMAIN?.includes("staging") && (
-								<div className="text-xs text-yellow-500">STAGING</div>
-							)}
-							<div>
-								<ConnectButton />
-							</div>
-						</div>
+						<Header />
 						{children}
 						{/* <div className='flex flex-row items-center justify-end w-full p-2'> */}
 						<Footer />
