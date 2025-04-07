@@ -4,7 +4,6 @@ import "./globals.css";
 import Providers from "../components/providers/providers";
 import "../../node_modules/@rainbow-me/rainbowkit/dist/index.css";
 import { Footer } from "./footer";
-import { useDevMode } from "../components/hooks/useLocalSettings";
 import { ErudaEnabler } from "../components/util/ErudaEnabler";
 import { Header } from "./header";
 const geistSans = localFont({

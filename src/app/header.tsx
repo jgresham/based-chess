@@ -1,15 +1,10 @@
 "use client";
-import { ArrowUpRight } from "lucide-react";
-import { contracts, type SupportedChainId } from "../lib/contracts";
-import { blockExplorers } from "../lib/contracts";
-import { Button, buttonVariants } from "../components/ui/button";
-import { useAccount } from "wagmi";
+
+import { Button } from "../components/ui/button";
 import Link from "next/link";
-import { DarkModeToggle } from "../components/DarkModeToggle";
-import { DevModeToggle } from "../components/DevModeToggle";
 import Image from "next/image";
 import { useCoinbaseWallet } from "../context/CoinbaseWalletContext";
-import DisplayAddress, { truncateAddress } from "../components/util/DisplayAddress";
+import DisplayAddress from "../components/util/DisplayAddress";
 
 export const Header = () => {
 	const { isConnected, connect, disconnect, address, subAccount, createSubAccount } =

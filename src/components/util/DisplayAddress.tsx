@@ -3,9 +3,9 @@ import { mainnet } from "wagmi/chains";
 import { mainnetConfig } from "../../lib/wagmiconfig";
 import { normalize } from "viem/ens";
 import { EmojiAvatar } from "./EmojiAvatar";
-import { FarcasterUser } from "../../lib/neynar.server";
-import { useState } from "react";
+import type { FarcasterUser } from "../../lib/neynar.server";
 import { Check, Copy } from "lucide-react";
+import { useState } from "react";
 
 // Displays an ethereum address in a truncated format by showing the first 6 and last 4 characters
 export const truncateAddress = (address: `0x${string}` | undefined) => {
@@ -68,7 +68,6 @@ export default function DisplayAddress({
 					<Copy
 						className="w-3 h-3 md:w-4 md:h-4 transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-700 touch-manipulation"
 						color="gray"
-						// size={12}
 					/>
 				)}
 			</button>
