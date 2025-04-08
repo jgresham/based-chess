@@ -28,6 +28,9 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 ```bash
 pnpm run deploy:worker -e staging
 pnpm run deploy:worker -e production
+# with v0.6+ of opennextjs/cloudflare use
+pnpm run deployNew -- -e staging
+pnpm run deployNew -- -e production
 ```
 ## Credits
 
