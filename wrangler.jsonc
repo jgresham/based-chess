@@ -13,6 +13,40 @@
 		"head_sampling_rate": 1
 	},
 	"env": {
+		"sub-accounts-demo": {
+			"name": "based-chess-worker-nextjs-sub-accounts-demo",
+			"vars": {
+				"ENVIRONMENT": "staging",
+				"CHAIN_ID": "84532"
+				// "NEXT_PUBLIC_URL": "https://staging.basedchess.xyz",
+				// "NEXT_PUBLIC_WORKER_DOMAIN": "chess-worker-staging.johnsgresham.workers.dev"
+			},
+			// "build": {
+			// 	"command": "NODE_ENV=staging npm run build"
+			// },
+			"durable_objects": {
+				"bindings": [
+					{
+						"name": "CHESS_GAME",
+						"class_name": "ChessGame",
+						"script_name": "chess-worker-staging"
+					}
+				]
+			},
+			"services": [
+				{
+					"binding": "RPC_SERVICE",
+					"service": "chess-worker",
+					"entrypoint": "SessionsRPC"
+				}
+			],
+			"routes": [
+				{
+					"pattern": "sub-accounts-demo.basedchess.xyz/*",
+					"zone_name": "basedchess.xyz"
+				}
+			]
+		},
 		"staging": {
 			"name": "based-chess-worker-nextjs-staging",
 			"vars": {

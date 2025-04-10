@@ -4,8 +4,7 @@ import { mainnetConfig } from "../../lib/wagmiconfig";
 import { normalize } from "viem/ens";
 import { EmojiAvatar } from "./EmojiAvatar";
 import type { FarcasterUser } from "../../lib/neynar.server";
-import { Check } from "lucide-react";
-import { Copy } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 
 // Displays an ethereum address in a truncated format by showing the first 6 and last 4 characters
@@ -43,7 +42,7 @@ export default function DisplayAddress({
 	};
 
 	return (
-		<div className="flex flex-row items-center gap-2">
+		<div className="flex flex-row items-center gap-2 group">
 			<EmojiAvatar
 				address={address || ""}
 				ensImage={farcasterData?.pfp_url ? farcasterData.pfp_url : (avatarURL ?? "")}

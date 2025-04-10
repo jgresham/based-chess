@@ -25,6 +25,7 @@ import { useConnectModal } from "@rainbow-me/rainbowkit";
 import SearchSelectUser, { type User as FarcasterUserSelect } from "./SearchSelectUser";
 import { Tabs, TabsTrigger, TabsList, TabsContent } from "@/components/ui/tabs";
 import { useFarcasterContext } from "./hooks/useFarcasterContext";
+import { useCoinbaseWallet } from "../context/CoinbaseWalletContext";
 
 export default function NewGameSheet() {
 	const [open, setOpen] = useState(false);
@@ -38,12 +39,22 @@ export default function NewGameSheet() {
 	const [openAfterConnect, setOpenAfterConnect] = useState(false);
 	const [errorCreateGame, setErrorCreateGame] = useState("");
 	const router = useRouter();
-	const { address } = useAccount();
+	// const { address } = useAccount();
 	const { openConnectModal } = useConnectModal();
 	const { data: farcasterContext } = useFarcasterContext();
 	const [selectedFarcasterUser, setSelectedFarcasterUser] = useState<FarcasterUserSelect | null>(
 		null,
 	);
+	const {
+		isConnected,
+		connect,
+		disconnect,
+		address,
+		subAccount,
+		createSubAccount,
+		subAccountWalletClient,
+		provider,
+	} = useCoinbaseWallet();
 
 	useEffect(() => {
 		if (openAfterConnect && address) {

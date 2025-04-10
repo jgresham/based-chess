@@ -10,6 +10,7 @@ import GameSummary from "../components/GameSummary";
 import { Separator } from "@/components/ui/separator";
 import { useSetFarcasterContext } from "../components/hooks/useFarcasterContext";
 import type { FarcasterUser } from "../lib/neynar.server";
+import { useCoinbaseWallet } from "../context/CoinbaseWalletContext";
 
 // export function metadata() {
 //   return [
@@ -61,11 +62,21 @@ export type GameData = {
 
 export default function Page() {
 	const [games, setGames] = useState<GameData[]>([]);
-	const { address } = useAccount();
+	// const { address } = useAccount();
 	const [isSDKLoaded, setIsSDKLoaded] = useState(false);
 	const [context, setContext] = useState<Context.FrameContext>();
 	const [errorFetchGames, setErrorFetchGames] = useState("");
 	const { mutate: setFarcasterContext } = useSetFarcasterContext();
+	const {
+		isConnected,
+		connect,
+		disconnect,
+		address,
+		subAccount,
+		createSubAccount,
+		subAccountWalletClient,
+		provider,
+	} = useCoinbaseWallet();
 
 	useEffect(() => {
 		const load = async () => {
