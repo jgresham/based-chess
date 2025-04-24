@@ -5,14 +5,32 @@
     "signature": "MHg0NDk1YjY2Mzc1M2FkZDQ3NDQwYjdhZTc5ZmIyYTZmOTE1YzhlM2UwZDA1YTVkYzUwYTgzYzg0MjZhYTUyYjM0MmNiZmE5NWExNDEzZDNmZDJhMGE2OWYwYzg5YzUxZDIwN2M1YmUzZDk0ODRkOWRhMDhjYWM0OWI3YjlkNjFiNjFi"
   },
   "frame": {
-    "version": "next",
+    "version": "1",
     "name": "Chess",
     "iconUrl": "https://basedchess.xyz/based-chess-logo-200.jpg",
     "homeUrl": "https://basedchess.xyz/",
-    "imageUrl": "https://basedchess.xyz/ogimage.jpg",
-    "buttonTitle": "Play Chess",
     "splashImageUrl": "https://basedchess.xyz/based-chess-logo-200.jpg",
     "splashBackgroundColor": "#ffffff",
-    "webhookUrl": "https://api.neynar.com/f/app/b7782930-4a30-4d38-99bf-6907c9a69faa/event"
+    "webhookUrl": "https://api.neynar.com/f/app/b7782930-4a30-4d38-99bf-6907c9a69faa/event",
+    "subtitle": "Based Chess - Onchain Chess",
+    "description": "Based Chess is onchain chess that is openly verifiable. Every move is signed by the player's wallet and saved onchain at the end of the game. Win and mint a GameWin NFT.",
+    "screenshotUrls" :[
+      "https://basedchess.xyz/screenshot_landing.png",
+      "https://basedchess.xyz/screenshot_midgame.png",
+      "https://basedchess.xyz/screenshot_endgame.png"
+    ],
+    "primaryCategory": "games",
+    "tags": [
+      "chess",
+      "onchain",
+      "verifiable",
+      "based",
+      "nft"
+    ],
+    "heroImageUrl": "https://basedchess.xyz/heroimage.jpg",
+    "tagline" : "Sign your moves, own your wins",
+    "ogTitle" : "Based Chess",
+    "ogDescription" : "Based Chess is onchain chess that is openly verifiable. Every move signed and onchain.",
+    "ogImageUrl" : "https://basedchess.xyz/heroimage.jpg"
   }
 }
