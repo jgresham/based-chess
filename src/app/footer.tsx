@@ -3,13 +3,15 @@ import { ArrowUpRight } from "lucide-react";
 import { contracts, type SupportedChainId } from "../lib/contracts";
 import { blockExplorers } from "../lib/contracts";
 import { buttonVariants } from "../components/ui/button";
-import { useAccount } from "wagmi";
+// import { useAccount } from "wagmi";
 import Link from "next/link";
 import { DarkModeToggle } from "../components/DarkModeToggle";
 import { DevModeToggle } from "../components/DevModeToggle";
+// import { useCoinbaseWallet } from "../context/CoinbaseWalletContext";
 
 export const Footer = () => {
-	const { chainId } = useAccount();
+	// const { chainId } = useAccount();
+	const chainId: SupportedChainId = 84532;
 
 	return (
 		<div className="flex flex-col w-full space-between items-center justify-center pt-16 pb-8 pr-8 pl-8 gap-2">

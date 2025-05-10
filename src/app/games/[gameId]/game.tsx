@@ -40,6 +40,8 @@ import { MintGameWinNFTBtn, type MintStep } from "./MintGameWinNFTBtn";
 import { useDevMode } from "../../../components/hooks/useLocalSettings";
 import { useFarcasterUser } from "../../../components/hooks/useFarcasterUser";
 import { FarcasterUser } from "../../../lib/neynar.server";
+import { useCoinbaseWallet } from "../../../context/CoinbaseWalletContext";
+import { recoverMessageAddress } from "viem";
 
 export type WsMessage = {
 	type: string;
@@ -84,7 +86,7 @@ export default function Game() {
 	const wsRef = useRef<WebSocket | null>(null);
 	const chessboardRef = useRef<HTMLDivElement>(null);
 	const [game, setGame] = useState<Chess | undefined>();
-	const { address, isConnected } = useAccount();
+	// const { address, isConnected } = useAccount();
 	const [awaitSigningMove, setAwaitSigningMove] = useState(false);
 	const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>("white");
 	const params = useParams();
@@ -136,8 +138,8 @@ export default function Game() {
 	>({});
 
 	const { showToast, Toast } = useToast();
-	const chainId = useChainId();
-
+	// const chainId = useChainId();
+	const chainId: SupportedChainId = 84532;
 	const [winner, setWinner] = useState<`0x${string}` | undefined>();
 	const [isNFTMinted, setIsNFTMinted] = useState(false);
 	const [isNFTReadyToMint, setIsNFTReadyToMint] = useState(false);
@@ -176,6 +178,47 @@ export default function Game() {
 		functionName: "gameToMintedTokenId",
 		args: [contracts.gamesContract[chainId as SupportedChainId].address, contractGameId],
 	});
+
+	// [start] Coinbase Sub Account Wallet specifics
+	const {
+		isConnected,
+		connect,
+		disconnect,
+		address,
+		subAccount,
+		createSubAccount,
+		subAccountWalletClient,
+		provider,
+	} = useCoinbaseWallet();
+	const [signature, setSignature] = useState<string | null>(null);
+
+	const signMessageSubAccount = useCallback(
+		async (message: string) => {
+			if (!subAccountWalletClient || !subAccount) {
+				// open create sub account for user
+				createSubAccount();
+				console.error("Subaccount wallet client or subaccount not found");
+				throw new Error("Subaccount wallet client or subaccount not found");
+			}
+
+			const signature = await subAccountWalletClient.signMessage({
+				message,
+				account: subAccount,
+			});
+			console.log("signature", signature);
+			// Error: Invalid yParityOrV value
+			// const addr = await recoverMessageAddress({
+			// 	message,
+			// 	signature,
+			// });
+			// console.log("recoverMessageAddress addr", addr);
+
+			setSignature(signature);
+			return signature;
+		},
+		[subAccountWalletClient, subAccount, createSubAccount],
+	);
+	// [end] Coinbase Sub Account Wallet specifics
 
 	useEffect(() => {
 		setAudioPlayerDropChessPiece(new Audio("/sounds/drop_piece.mp3"));
@@ -678,17 +721,21 @@ export default function Game() {
 		// sign move
 		const message = game.pgn();
 		// const message = JSON.stringify(moveMove.lan)
-		const signature = await signMessage(frameWagmiConfig, {
-			message,
-		});
+		// const signature = await signMessage(frameWagmiConfig, {
+		// 	message,
+		// });
+		const signature = await signMessageSubAccount(message);
+
 		console.log("user move signature:", signature);
 
-		const verified = await verifyMessage(frameWagmiConfig, {
-			address,
-			message,
-			signature,
-		});
-		console.log("user move signature verified:", verified);
+		// todo: verify the sub account signature
+
+		// const verified = await verifyMessage(frameWagmiConfig, {
+		// 	address,
+		// 	message,
+		// 	signature,
+		// });
+		// console.log("user move signature verified:", verified);
 
 		setAwaitSigningMove(false);
 		// update server
@@ -718,6 +765,7 @@ export default function Game() {
 							signature,
 							message,
 							address,
+							subAccount,
 						},
 					}),
 				);
@@ -744,6 +792,7 @@ export default function Game() {
 							signature,
 							message,
 							address,
+							subAccount,
 						},
 					}),
 				);
@@ -770,6 +819,7 @@ export default function Game() {
 							signature,
 							message,
 							address,
+							subAccount,
 						},
 					}),
 				);

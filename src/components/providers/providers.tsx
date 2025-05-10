@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { darkTheme } from "@rainbow-me/rainbowkit";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { useTheme } from "next-themes";
+import { CoinbaseWalletProvider } from "@/context/CoinbaseWalletContext";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
 	const [mounted, setMounted] = useState(false);
@@ -43,15 +44,17 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 	return (
 		<FrameProvider>
 			<RainbowKitProvider>
-				{/* To provide theme for RainbowKit in Providers */}
-				<ThemeProvider
-					attribute="class"
-					defaultTheme="system"
-					enableSystem
-					disableTransitionOnChange
-				>
-					{children}
-				</ThemeProvider>
+				<CoinbaseWalletProvider>
+					{/* To provide theme for RainbowKit in Providers */}
+					<ThemeProvider
+						attribute="class"
+						defaultTheme="system"
+						enableSystem
+						disableTransitionOnChange
+					>
+						{children}
+					</ThemeProvider>
+				</CoinbaseWalletProvider>
 			</RainbowKitProvider>
 		</FrameProvider>
 	);
